@@ -2,7 +2,8 @@ from OpenGL.GL import *
 from OpenGL.error import NullFunctionError
 from engine.buffer.texture import Texture
 
-class Depthbuffer(Texture):
+
+class DepthBuffer(Texture):
     def __init__(self):
         super().__init__(GL_TEXTURE_2D)
 

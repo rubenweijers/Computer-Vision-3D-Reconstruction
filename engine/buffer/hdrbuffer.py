@@ -1,17 +1,22 @@
 from OpenGL.GL import *
 from OpenGL.error import NullFunctionError
-from engine.buffer.framebuffer import Framebuffer
+from engine.buffer.framebuffer import FrameBuffer
 from engine.config import config
 
-class HDRbuffer:
+
+class HDRBuffer:
+    def __init__(self):
+        self.height = None
+        self.width = None
+
     def create(self, width, height):
         self.width = width
         self.height = height
-        self.__createFBO()
-        self.__createMultisampleFBO()
-       
-    def __createFBO(self):
-        self.hdrFBO = Framebuffer()
+        self.__create_fbo()
+        self.__create_multisample_fbo()
+
+    def __create_fbo(self):
+        self.hdrFBO = FrameBuffer()
         self.hdrFBO.bind()
         self.colorBuffers = glGenTextures(2)
         for i in range(2):
@@ -28,23 +33,26 @@ class HDRbuffer:
         glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, self.width, self.height)
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, self.rboDepth)
         glDrawBuffers(2, [GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1])
-        self.hdrFBO.checkComplete()
+        self.hdrFBO.check_complete()
 
-    def __createMultisampleFBO(self):
-        self.__hdrFBO_MS = Framebuffer()
+    def __create_multisample_fbo(self):
+        self.__hdrFBO_MS = FrameBuffer()
         self.__hdrFBO_MS.bind()
         self.__colorBuffersMS = glGenTextures(2)
         for i in range(2):
             glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, self.__colorBuffersMS[i])
-            glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, config['sampling_level'], GL_RGB16F, self.width, self.height, GL_TRUE)
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D_MULTISAMPLE, self.__colorBuffersMS[i], 0)
+            glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, config['sampling_level'], GL_RGB16F, self.width,
+                                    self.height, GL_TRUE)
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D_MULTISAMPLE,
+                                   self.__colorBuffersMS[i], 0)
 
         self.__rboDepthMS = glGenRenderbuffers(1)
         glBindRenderbuffer(GL_RENDERBUFFER, self.__rboDepthMS)
-        glRenderbufferStorageMultisample(GL_RENDERBUFFER, config['sampling_level'], GL_DEPTH_COMPONENT, self.width, self.height)
+        glRenderbufferStorageMultisample(GL_RENDERBUFFER, config['sampling_level'], GL_DEPTH_COMPONENT, self.width,
+                                         self.height)
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, self.__rboDepthMS)
         glDrawBuffers(2, [GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1])
-        self.__hdrFBO_MS.checkComplete()
+        self.__hdrFBO_MS.check_complete()
 
     def bind(self):
         self.__hdrFBO_MS.bind()
@@ -55,7 +63,8 @@ class HDRbuffer:
         for i in range(2):
             glReadBuffer(GL_COLOR_ATTACHMENT0 + i)
             glDrawBuffer(GL_COLOR_ATTACHMENT0 + i)
-            glBlitFramebuffer(0, 0, self.width, self.height, 0, 0, self.width, self.height, GL_COLOR_BUFFER_BIT, GL_NEAREST)
+            glBlitFramebuffer(0, 0, self.width, self.height, 0, 0, self.width, self.height, GL_COLOR_BUFFER_BIT,
+                              GL_NEAREST)
         glBindFramebuffer(GL_READ_FRAMEBUFFER, 0)
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0)
         glBindFramebuffer(GL_FRAMEBUFFER, 0)

@@ -1,11 +1,12 @@
 from OpenGL.GL import *
 from OpenGL.error import NullFunctionError
 
-class Framebuffer:
+
+class FrameBuffer:
     def __init__(self):
         self.FBO = glGenFramebuffers(1)
-        
-    def checkComplete(self):
+
+    def check_complete(self):
         if glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE:
             raise RuntimeError('Error when creating Framebuffer.')
         self.unbind()
@@ -18,7 +19,7 @@ class Framebuffer:
 
     def unbind(self):
         glBindFramebuffer(GL_FRAMEBUFFER, 0)
-    
+
     def __del__(self):
         self.delete()
 

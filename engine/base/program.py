@@ -3,12 +3,13 @@ from engine.base.shader import Shader
 from OpenGL.GL import *
 from OpenGL.error import NullFunctionError
 
+
 class Program:
     def __init__(self):
         self.__programId = 0
         self.shaders = []
 
-    def attachShader(self, shader):
+    def attach_shader(self, shader):
         self.shaders.append(shader)
 
     def link(self):
@@ -74,9 +75,10 @@ class Program:
     def setMat4(self, name, mat):
         glUniformMatrix4fv(self.getUniformLocation(name), 1, GL_FALSE, glm.value_ptr(mat))
 
-def getLinkedProgram(vertPath, fragPath):
+
+def get_linked_program(vert_path, frag_path):
     program = Program()
-    program.attachShader(Shader(vertPath, GL_VERTEX_SHADER))
-    program.attachShader(Shader(fragPath, GL_FRAGMENT_SHADER))
+    program.attach_shader(Shader(vert_path, GL_VERTEX_SHADER))
+    program.attach_shader(Shader(frag_path, GL_FRAGMENT_SHADER))
     program.link()
     return program

@@ -1,8 +1,13 @@
 from OpenGL.GL import *
 from OpenGL.error import NullFunctionError
-from engine.buffer.framebuffer import Framebuffer
-  
-class Blurbuffer:
+from engine.buffer.framebuffer import FrameBuffer
+
+
+class BlurBuffer:
+    def __init__(self):
+        self.colorBuffers = None
+        self.FBOs = None
+
     def create(self, width, height):
         self.FBOs = glGenFramebuffers(2)
         self.colorBuffers = glGenTextures(2)

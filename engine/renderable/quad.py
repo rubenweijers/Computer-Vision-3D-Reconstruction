@@ -2,9 +2,10 @@ import numpy as np
 from OpenGL.GL import *
 from OpenGL.error import NullFunctionError
 
+
 class Quad:
     def __init__(self):
-        quadVertices = np.array([
+        quad_vertices = np.array([
             -1,  1, 0, 0, 1,
             -1, -1, 0, 0, 0,
             1,  1, 0, 1, 1,
@@ -15,7 +16,7 @@ class Quad:
         self.quadVBO = glGenBuffers(1)
         glBindVertexArray(self.quadVAO)
         glBindBuffer(GL_ARRAY_BUFFER, self.quadVBO)
-        glBufferData(GL_ARRAY_BUFFER, quadVertices, GL_STATIC_DRAW)
+        glBufferData(GL_ARRAY_BUFFER, quad_vertices, GL_STATIC_DRAW)
         stride = np.dtype(np.float32).itemsize * 5
         offset = ctypes.c_void_p(np.dtype(np.float32).itemsize * 3)
         glEnableVertexAttribArray(0)

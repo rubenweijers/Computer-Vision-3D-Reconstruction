@@ -2,6 +2,7 @@ import os
 from OpenGL.GL import *
 from OpenGL.error import NullFunctionError
 
+
 class Shader:
     def __init__(self, sourcePath, shaderType):
         self.__shaderId = 0
@@ -12,13 +13,13 @@ class Shader:
 
     def compile(self):
         self.__shaderId = glCreateShader(self.shaderType)
-        glShaderSource(self.__shaderId, self.__loadSource())
+        glShaderSource(self.__shaderId, self.__load_source())
         glCompileShader(self.__shaderId)
         if glGetShaderiv(self.__shaderId, GL_COMPILE_STATUS) != GL_TRUE:
             info = glGetShaderInfoLog(self.__shaderId)
             raise RuntimeError(f'Shader compilation failed:\n{info}')
 
-    def __loadSource(self):
+    def __load_source(self):
         with open(self.__sourcePath) as file:
             source = file.read()
         return source

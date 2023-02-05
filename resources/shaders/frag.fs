@@ -74,17 +74,18 @@ void main()
 
     fragColor = vec4(result, 1.0);
     float brightness = dot(fragColor.rgb, vec3(0.2126, 0.7152, 0.0722));
-    if (brightness > 1.0)
-        brightColor = vec4(fragColor.rgb, 1.0);
-	else
-		brightColor = vec4(0.0, 0.0, 0.0, 1.0);
+//     if (brightness > 1.0)
+//         brightColor = vec4(fragColor.rgb, 1.0);
+// 	else
+// 		brightColor = vec4(0.1, 0.1, 0.1, 1.0);
+    brightColor = vec4(fragColor.rgb, 1.0);
 }
 
 vec2 parallaxMapping(vec3 viewDir)
 {
     const float minLayers = 10.0;
     const float maxLayers = 32.0;
-    float numLayers = mix(maxLayers, minLayers, abs(dot(vec3(0.0, 0.0, 1.0), viewDir)));  
+    float numLayers = mix(maxLayers, minLayers, abs(dot(vec3(0.0, 0.0, 1.0), viewDir)));
     float layerDepth = 1.0 / numLayers;
     float currentLayerDepth = 0.0;
     vec2 P = viewDir.xy * mat.heightScale;
@@ -127,7 +128,7 @@ float shadowCalculation()
 {
     vec3 projCoords = fs_in.fragPosLightSpace.xyz / fs_in.fragPosLightSpace.w;
     projCoords = projCoords * 0.5 + 0.5;
-    float closestDepth = texture(shadowMap, projCoords.xy).r; 
+    float closestDepth = texture(shadowMap, projCoords.xy).r;
     float currentDepth = projCoords.z;
     vec3 lightDir = normalize(lightPos - fs_in.fragPos);
     float bias = max(0.05 * (1.0 - dot(fs_in.normal, lightDir)), 0.005);
@@ -137,9 +138,9 @@ float shadowCalculation()
     {
         for (int y = -1; y <= 1; ++y)
         {
-            float pcfDepth = texture(shadowMap, projCoords.xy + vec2(x, y) * texelSize).r; 
-            shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;        
-        }    
+            float pcfDepth = texture(shadowMap, projCoords.xy + vec2(x, y) * texelSize).r;
+            shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;
+        }
     }
     shadow /= 16.0;
     if (projCoords.z > 1.0)

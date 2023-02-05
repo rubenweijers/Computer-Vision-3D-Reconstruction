@@ -19,6 +19,7 @@ out VS_OUT
 
 uniform mat4 viewProject;
 uniform mat4 model;
+uniform mat4 rotation;
 uniform vec3 lightPos;
 uniform vec3 viewPos;
 uniform mat4 lightSpaceMatrix;
@@ -26,12 +27,12 @@ uniform mat4 lightSpaceMatrix;
 void main()
 {
     vs_out.texCoords = aTexCoords;
-    vs_out.fragPos = vec3(model * vec4(aPos + aInstancePos, 1.0));
-    vs_out.normal = transpose(inverse(mat3(model))) * aNormal + aInstancePos;
+    vs_out.fragPos = vec3(model * rotation * vec4(aPos, 1.0)) + aInstancePos;
+    vs_out.normal = transpose(inverse(mat3(model * rotation))) * aNormal + aInstancePos;
     gl_Position = viewProject * vec4(vs_out.fragPos, 1.0);
 
-    vec3 N = normalize(vec3(model * vec4(aNormal, 0.0)));
-    vec3 T = normalize(vec3(model * vec4(aTangent, 0.0)));
+    vec3 N = normalize(vec3(vec4(aNormal, 0.0) * model * rotation));
+    vec3 T = normalize(vec3(vec4(aTangent, 0.0) * model * rotation));
     T = normalize(T - dot(T, N) * N);
     vec3 B = cross(N, T);
     mat3 TBN = transpose(mat3(T, B, N));
