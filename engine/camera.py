@@ -3,15 +3,15 @@ import math
 
 
 class Camera:
-    def __init__(self, position):
+    def __init__(self, position, pitch=-90, yaw=0, speed=20):
         self.right = None
         self.direction = None
         self.position = position
         self.up = glm.vec3(0, 1, 0)
         self.worldUp = glm.vec3(0, 1, 0)
-        self.pitch = -90  # -30
-        self.yaw = 0  # 45
-        self.speed = 20
+        self.pitch = pitch
+        self.yaw = yaw
+        self.speed = speed
         self.sensitivity = 0.25
         self.update_vectors()
 

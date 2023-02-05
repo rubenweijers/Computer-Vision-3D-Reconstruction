@@ -12,11 +12,10 @@ from engine.generator import generate_voxel_positions, generate_grid, get_cam_po
 from engine.camera import Camera
 from engine.config import config
 
-cube, square, hdrbuffer, blurbuffer, lastPosX, lastPosY = None, None, None, None, None, None
+cube, hdrbuffer, blurbuffer, lastPosX, lastPosY = None, None, None, None, None
 firstTime = True
-width, height = config['window_width'], config['window_height']
-# camera = Camera(glm.vec3(-5, config['world_height']+5, -5))
-camera = Camera(glm.vec3(0, 250, 0))
+window_width, window_height = config['window_width'], config['window_height']
+camera = Camera(glm.vec3(0, 100, 0), pitch=-90, yaw=0, speed=40)
 
 
 def draw_objs(obj, program, perspective, light_pos, texture, normal, specular, depth):
@@ -47,7 +46,7 @@ def draw_objs(obj, program, perspective, light_pos, texture, normal, specular, d
 
 
 def main():
-    global hdrbuffer, blurbuffer, cube, square, width, height
+    global hdrbuffer, blurbuffer, cube, window_width, window_height
 
     if not glfw.init():
         print('Failed to initialize GLFW.')
@@ -61,14 +60,14 @@ def main():
 
     if config['fullscreen']:
         mode = glfw.get_video_mode(glfw.get_primary_monitor())
-        width, height = mode.size.width, mode.size.height
-        window = glfw.create_window(mode.size.width,
-                                    mode.size.height,
+        window_width, window_height = mode.size.window_width, mode.size.window_height
+        window = glfw.create_window(mode.size.window_width,
+                                    mode.size.window_height,
                                     config['app_name'],
                                     glfw.get_primary_monitor(),
                                     None)
     else:
-        window = glfw.create_window(width, height, config['app_name'], None, None)
+        window = glfw.create_window(window_width, window_height, config['app_name'], None, None)
     if not window:
         print('Failed to create GLFW Window.')
         glfw.terminate()
@@ -99,14 +98,14 @@ def main():
     hdr_program.setInt('bloomMap', 1)
 
     hdrbuffer = HDRBuffer()
-    hdrbuffer.create(width, height)
+    hdrbuffer.create(window_width, window_height)
     blurbuffer = BlurBuffer()
-    blurbuffer.create(width, height)
+    blurbuffer.create(window_width, window_height)
 
     bloom = Bloom(hdrbuffer, hdr_program, blurbuffer, blur_program)
 
     light_pos = glm.vec3(0.5, 0.5, 0.5)
-    perspective = glm.perspective(45, width / height, config['near_plane'], config['far_plane'])
+    perspective = glm.perspective(45, window_width / window_height, config['near_plane'], config['far_plane'])
 
     cam_angles = [[0, 315, -45], [0, 225, -45], [0, 135, -45], [0, 45, -45]]
     cam_shapes = [Model('resources/models/camera.json', cam_angles[c]) for c in range(4)]
@@ -146,11 +145,9 @@ def main():
             last_voxel_update = current_time
 
         move_input(window, delta_time)
-        # print(camera.position)
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         glClearColor(0.1, 0.2, 0.8, 1)
-        # glClearColor(0, 0, 0, 1)
 
         square.draw_multiple(depth_program)
         cube.draw_multiple(depth_program)
@@ -158,9 +155,9 @@ def main():
             cam.draw_multiple(depth_program)
 
         hdrbuffer.bind()
-        glViewport(0, 0, width, height)
+        glViewport(0, 0, window_width, window_height)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-        #
+
         draw_objs(cube, program, perspective, light_pos, texture, normal, specular, depth)
         draw_objs(square, program, perspective, light_pos, texture_grid, normal_grid, specular_grid, depth_grid)
         for cam in cam_shapes:
@@ -179,13 +176,13 @@ def main():
 
 def resize_callback(window, w, h):
     if h > 0:
-        global width, height, hdrbuffer, blurbuffer
-        width, height = w, h
-        glm.perspective(45, width / height, config['near_plane'], config['far_plane'])
+        global window_width, window_height, hdrbuffer, blurbuffer
+        window_width, window_height = w, h
+        glm.perspective(45, window_width / window_height, config['near_plane'], config['far_plane'])
         hdrbuffer.delete()
-        hdrbuffer.create(width, height)
+        hdrbuffer.create(window_width, window_height)
         blurbuffer.delete()
-        blurbuffer.create(width, height)
+        blurbuffer.create(window_width, window_height)
 
 
 def key_callback(window, key, scancode, action, mods):
