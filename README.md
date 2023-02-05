@@ -1,13 +1,7 @@
-# Perlin-Noise-3D-Voxel-Generator
-Voxel generator based on perlin 3d noise | Python OpenGL 3.3
+# Computer Vision 3D Reconstruction
+Python OpenGL 3.3
 
 <img src="ss/chunk.jpg" data-canonical-src="ss/chunk.jpg" width="400" height="400" alt="Voxel Terrain Perlin Noise 3D" />
-
-## About
-This is example program had written in Python that generate blocks similar minecraft.
-This implementation is not optmalized because that draw instanced cubes with position offset.
-The positions are generating by Perlin Noise. This program do not generation one big mesh.
-**Made for learning purpose.**
 
 ## Features
 - Directional Shadows
@@ -29,7 +23,7 @@ If you have errors after installation you will do following:
 
 ## Control
 ```
-G - to generate the new chunk of world
+G - to visualize new voxel array
 ESC - to exit the program
 ```
 
@@ -37,5 +31,4 @@ ESC - to exit the program
 Open your terminal or CMD and call `python executable.py` or `python3 executable.py`
 
 ## Thanks
-- I recommend you webiste with great amount of knowledge https://learnopengl.com. Thanks to the author Joey de Vries.
-- Textures from https://textures.pixel-furnace.com.
+- stanfortonski - https://github.com/stanfortonski - for providing such a great codebase.
