@@ -1,7 +1,7 @@
 # Computer Vision 3D Reconstruction
 Python OpenGL 3.3
 
-<img src="ss/chunk.jpg" data-canonical-src="ss/chunk.jpg" width="400" height="400" alt="Voxel Terrain Perlin Noise 3D" />
+<img src="ss/ss.png" data-canonical-src="ss/ss.png" width="400" height="400" alt="Computer Vision 3D Reconstruction" />
 
 ## Features
 - Directional Shadows
