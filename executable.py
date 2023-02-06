@@ -1,14 +1,12 @@
 import glm
 import glfw
-import math
-from OpenGL.GL import *
 from engine.base.program import get_linked_program
 from engine.renderable.model import Model
 from engine.buffer.texture import *
 from engine.buffer.hdrbuffer import HDRBuffer
 from engine.buffer.blurbuffer import BlurBuffer
 from engine.effect.bloom import Bloom
-from engine.generator import generate_voxel_positions, generate_grid, get_cam_pos
+from assignment import set_voxel_positions, generate_grid, get_cam_positions, get_cam_angles
 from engine.camera import Camera
 from engine.config import config
 
@@ -84,7 +82,6 @@ def main():
     glEnable(GL_CULL_FACE)
     glCullFace(GL_BACK)
 
-    # basic_program = get_linked_program('resources/shaders/vert.vs', 'resources/shaders/frag.fs')
     program = get_linked_program('resources/shaders/vert.vs', 'resources/shaders/frag.fs')
     depth_program = get_linked_program('resources/shaders/shadow_depth.vs', 'resources/shaders/shadow_depth.fs')
     blur_program = get_linked_program('resources/shaders/blur.vs', 'resources/shaders/blur.fs')
@@ -107,7 +104,7 @@ def main():
     light_pos = glm.vec3(0.5, 0.5, 0.5)
     perspective = glm.perspective(45, window_width / window_height, config['near_plane'], config['far_plane'])
 
-    cam_angles = [[0, 315, -45], [0, 225, -45], [0, 135, -45], [0, 45, -45]]
+    cam_angles = get_cam_angles()
     cam_shapes = [Model('resources/models/camera.json', cam_angles[c]) for c in range(4)]
     square = Model('resources/models/square.json')
     cube = Model('resources/models/cube.json')
@@ -123,13 +120,11 @@ def main():
     grid_positions = generate_grid(config['world_width'], config['world_width'])
     square.set_multiple_positions(grid_positions)
 
-    cam_positions = get_cam_pos()
+    cam_positions = get_cam_positions()
     for c, cam_pos in enumerate(cam_positions):
         cam_shapes[c].set_multiple_positions([cam_pos])
 
     last_time = glfw.get_time()
-    last_voxel_update = glfw.get_time()
-    first_iteration = True
     while not glfw.window_should_close(window):
         if config['debug_mode']:
             print(glGetError())
@@ -137,12 +132,6 @@ def main():
         current_time = glfw.get_time()
         delta_time = current_time - last_time
         last_time = current_time
-        if first_iteration or current_time - last_voxel_update > 2:
-            first_iteration = False
-            # block_positions = generate_voxel_positions(config['world_width'], config['world_height'], config['world_width'])
-            # cube.set_multiple_positions(block_positions)
-            # block_positions.clear()
-            last_voxel_update = current_time
 
         move_input(window, delta_time)
 
@@ -158,8 +147,8 @@ def main():
         glViewport(0, 0, window_width, window_height)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
-        draw_objs(cube, program, perspective, light_pos, texture, normal, specular, depth)
         draw_objs(square, program, perspective, light_pos, texture_grid, normal_grid, specular_grid, depth_grid)
+        draw_objs(cube, program, perspective, light_pos, texture, normal, specular, depth)
         for cam in cam_shapes:
             draw_objs(cam, program, perspective, light_pos, texture_grid, normal_grid, specular_grid, depth_grid)
 
@@ -190,7 +179,7 @@ def key_callback(window, key, scancode, action, mods):
         glfw.set_window_should_close(window, glfw.TRUE)
     if key == glfw.KEY_G and action == glfw.PRESS:
         global cube
-        positions = generate_voxel_positions(config['world_width'], config['world_height'], config['world_width'])
+        positions = set_voxel_positions(config['world_width'], config['world_height'], config['world_width'])
         cube.set_multiple_positions(positions)
 
 
