@@ -3,12 +3,6 @@ Python OpenGL 3.3
 
 <img src="ss/ss.png" data-canonical-src="ss/ss.png" width="600" height="400" alt="Computer Vision 3D Reconstruction" />
 
-## Features
-- Directional Shadows
-- Normal Mapping
-- Parallax Occlusion Mapping
-- Bloom/HDR effect
-
 ## Installation
 Install following packages via pip:
 1. PyOpenGL: `pip install PyOpenGL PyOpenGL_accelerate`
