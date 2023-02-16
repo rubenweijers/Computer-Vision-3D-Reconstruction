@@ -6,7 +6,7 @@ from engine.buffer.texture import *
 from engine.buffer.hdrbuffer import HDRBuffer
 from engine.buffer.blurbuffer import BlurBuffer
 from engine.effect.bloom import Bloom
-from assignment import set_voxel_positions, generate_grid, get_cam_positions, get_cam_angles
+from assignment import set_voxel_positions, generate_grid, get_cam_positions, get_cam_rotation_matrices
 from engine.camera import Camera
 from engine.config import config
 
@@ -104,8 +104,8 @@ def main():
     light_pos = glm.vec3(0.5, 0.5, 0.5)
     perspective = glm.perspective(45, window_width / window_height, config['near_plane'], config['far_plane'])
 
-    cam_angles = get_cam_angles()
-    cam_shapes = [Model('resources/models/camera.json', cam_angles[c]) for c in range(4)]
+    cam_rot_matrices = get_cam_rotation_matrices()
+    cam_shapes = [Model('resources/models/camera.json', cam_rot_matrices[c]) for c in range(4)]
     square = Model('resources/models/square.json')
     cube = Model('resources/models/cube.json')
     texture = load_texture_2d('resources/textures/diffuse.jpg')
