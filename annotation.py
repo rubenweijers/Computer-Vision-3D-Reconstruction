@@ -4,7 +4,40 @@ import pickle
 import cv2
 import numpy as np
 
-from calibration import read_checkerboard_xml, read_frames
+from calibration import make_object_points, read_checkerboard_xml, read_frames
+
+
+def draw(img, corners, imagepoints):
+    """Draws the axis on the image.
+
+    Based on https://docs.opencv.org/4.6.0/d7/d53/tutorial_py_pose.html
+    """
+    corners = corners.astype(int)
+    origin = corners[0].reshape(2)  # Flattening the array
+    imagepoints = imagepoints.astype(int).reshape(-1, 2)
+    colour = (0, 165, 255)  # Orange
+
+    # Draw a cube at the origin
+    for start, end in zip(range(4), range(4, 8)):
+        # Draw the lines between the corners
+        img = cv2.line(img, imagepoints[start], imagepoints[end], colour, 3)
+
+    img = cv2.drawContours(img, [imagepoints[4:]], -1, colour, 3)  # Top face
+    img = cv2.drawContours(img, [imagepoints[:4]], -1, colour, 3)  # Bottom face
+
+    # Draw the three main axis
+    img = cv2.line(img, origin, imagepoints[3], (255, 0, 0), 10)  # Draw x axis in blue
+    img = cv2.line(img, origin, imagepoints[1], (0, 255, 0), 10)  # Draw y axis in green
+    img = cv2.line(img, origin, imagepoints[4], (0, 0, 255), 10)  # Draw z axis in red
+
+    # Draw big circle at origin
+    img = cv2.circle(img, origin, 7, colour, -1)
+
+    # Draw black circles at imagepoints
+    for start in imagepoints:
+        img = cv2.circle(img, start, 3, (0, 0, 0), -1)
+
+    return img
 
 
 def interpolate_points(points, img):
@@ -46,10 +79,39 @@ def interpolate_points(points, img):
     # Reshape corners to a 2D array
     corners = corners.reshape(-1, 1, 2)
 
-    img_grey = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    corners = cv2.cornerSubPix(img_grey, corners, (11, 11), (-1, -1), criteria)
+    # img_grey = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    # corners = cv2.cornerSubPix(img_grey, corners, (11, 11), (-1, -1), criteria)
 
     return corners
+
+
+def calculate_extrinsics(corners: np.ndarray, camera_params: dict, square_size: int, horizontal_corners: int, vertical_corners: int) -> tuple:
+    # Find the rotation and translation vectors, load camera parameters from pickle file
+    print("Find the rotation and translation vectors")
+
+    # Calculate object points
+    object_points = make_object_points(vertical_corners, horizontal_corners, square_size)
+
+    # useExtrinsicGuess = False since we don't know the initial rotation and translation vectors
+    pattern_found, rot_vec, transl_vec = cv2.solvePnP(object_points, corners,
+                                                      camera_params["camera_matrix"], camera_params["distortion_coefficients"],
+                                                      useExtrinsicGuess=False)
+
+    n = square_size * 3  # length of the axis in mm
+    axis = np.float32([[0, 0, 0],
+                       [0, n, 0],
+                       [n, n, 0],
+                       [n, 0, 0],
+                       [0, 0, -n],
+                       [0, n, -n],
+                       [n, n, -n],
+                       [n, 0, -n]])
+
+    print("Project 3D points to image plane")
+    imagepoints, jac = cv2.projectPoints(axis, rot_vec, transl_vec,
+                                         camera_params["camera_matrix"], camera_params["distortion_coefficients"])
+
+    return rot_vec, transl_vec, imagepoints
 
 
 def on_click(event, x, y, flags, param) -> None:
@@ -65,8 +127,8 @@ def on_click(event, x, y, flags, param) -> None:
         print(f"{x=}, {y=}; corrected for zoom: {x_corrected=}, {y_corrected=}")
 
         # Draw an orange circle on the clicked point
-        cv2.circle(frame, (x, y), 3, (0, 165, 255), -1)
-        cv2.imshow("", frame)
+        cv2.circle(params["frame"], (x, y), 3, (0, 165, 255), -1)
+        cv2.imshow("", params["frame"])
 
         points.append((x_corrected, y_corrected))
         if len(points) < 4:
@@ -76,7 +138,7 @@ def on_click(event, x, y, flags, param) -> None:
     if (len(points) == 4) and (event == cv2.EVENT_LBUTTONDOWN):
         print("All corners have been provided!")
 
-        corners = interpolate_points(points, frame)
+        corners = interpolate_points(points, params["frame"])
 
         # Check if pickle file exists, to save annotations
         if not os.path.exists(param["fp_output"]):
@@ -94,9 +156,20 @@ def on_click(event, x, y, flags, param) -> None:
 
         # Draw the interpolated points
         for corner in corners:
-            cv2.circle(frame, (corner[0] * zoom).astype(int), 2, (0, 0, 255), -1)
+            cv2.circle(params["frame"], (corner[0] * zoom).astype(int), 2, (0, 0, 255), -1)
 
-        cv2.imshow("", frame)
+        rot_vec, transl_vec, imagepoints = calculate_extrinsics(
+            corners, param["camera_params"], param["square_size"], param["horizontal_corners"], param["vertical_corners"])
+
+        # Save extrinsics to pickle file
+        extrinsics = {"rotation_vector": rot_vec, "translation_vector": transl_vec, "imagepoints": imagepoints}
+        with open(param["fp_extrinsics"], "wb") as f:
+            pickle.dump(extrinsics, f)
+
+        # Draw the axis on the image
+        print("Draw the axis on the image")
+        params["frame"] = draw(params["frame"], corners * zoom, imagepoints * zoom)
+        cv2.imshow("", params["frame"])
 
 
 if __name__ == "__main__":
@@ -107,6 +180,8 @@ if __name__ == "__main__":
                          "./data/cam3/camera_params.pickle", "./data/cam4/camera_params.pickle"]
     fps_annotations = ["./data/cam1/annotations.pickle", "./data/cam2/annotations.pickle",
                        "./data/cam3/annotations.pickle", "./data/cam4/annotations.pickle"]
+    fps_extrinsics = ["./data/cam1/extrinsics.pickle", "./data/cam2/extrinsics.pickle",
+                      "./data/cam3/extrinsics.pickle", "./data/cam4/extrinsics.pickle"]
     fp_xml = "./data/checkerboard.xml"
 
     # Read XML with checkerboard parameters
@@ -138,7 +213,10 @@ if __name__ == "__main__":
         frame = cv2.resize(frame, (0, 0), fx=zoom, fy=zoom)
 
         cv2.imshow("", frame)
-        cv2.setMouseCallback("", on_click, param={"fp_output": fps_annotations[c], "frame_number": frame_number, "zoom": zoom})
+        params = {"fp_output": fps_annotations[c], "fp_extrinsics": fps_extrinsics[c], "frame_number": frame_number, "zoom": zoom,
+                  "camera_params": camera_params, "horizontal_corners": horizontal_corners, "vertical_corners": vertical_corners,
+                  "square_size": square_size, "frame": frame}
+        cv2.setMouseCallback("", on_click, param=params)
 
         cv2.waitKey(0)
         cv2.destroyAllWindows()
