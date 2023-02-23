@@ -1,5 +1,15 @@
 # Custom
-data/
+data/*
+
+!data/cam1/config.json
+!data/cam2/config.json
+!data/cam3/config.json
+!data/cam4/config.json
+
+!data/cam1/config.pickle
+!data/cam2/config.pickle
+!data/cam3/config.pickle
+!data/cam4/config.pickle
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
