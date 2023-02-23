@@ -133,7 +133,7 @@ if __name__ == "__main__":
 
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 
-    for c, fp_video in enumerate(tqdm(fps_videos)):
+    for c, fp_video in enumerate(fps_videos):
         frames = read_frames(fp_video)
         if frames is None:
             print(f"Could not read frames from {fp_video}")
