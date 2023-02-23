@@ -7,7 +7,7 @@ from tqdm import tqdm
 
 
 def make_object_points(horizontal_corners: int, vertical_corners: int, square_size: int) -> np.ndarray:
-    """Make the object points for the chessboard.q
+    """Make the object points for the chessboard.
 
     The object points are the 3D points in real world space.
     """
@@ -18,7 +18,7 @@ def make_object_points(horizontal_corners: int, vertical_corners: int, square_si
     return objp
 
 
-def calibrate_camera(frames: list, horizontal_corners: int, vertical_corners: int, square_size: int, fp_output: str = None) -> dict:
+def calibrate_camera(frames: list, horizontal_corners: int, vertical_corners: int, square_size: int, fp_output: str = None, every_n: int = 50) -> dict:
     """Calibrate the camera using OpenCV.
 
     Uses a list of frames to calibrate the camera. The frames should be taken with the same camera and the same checkerboard.
@@ -30,7 +30,8 @@ def calibrate_camera(frames: list, horizontal_corners: int, vertical_corners: in
 
     # Go through training images and grayscale
     not_found = 0
-    for c, frame in enumerate(tqdm(frames, desc="Finding chessboard corners")):
+    desc = f"Finding corners in every {every_n}th frame of {len(frames)} frames (total {len(frames) // every_n} frames ({len(frames) // every_n / len(frames) * 100:.2f}%))"
+    for c, frame in enumerate(tqdm(frames[::every_n], desc=desc)):
         img_grey = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
         # Find the chess board corners
@@ -44,7 +45,7 @@ def calibrate_camera(frames: list, horizontal_corners: int, vertical_corners: in
             not_found += 1
             # Skip 10 frames to avoid the same frame being used again
 
-    print(f"Could not find chessboard corners in {not_found} ({not_found / len(frames) * 100:.2f}%) frames")
+    print(f"Could not find chessboard corners in {not_found} ({not_found / (c+1) * 100:.2f}%) frames")
 
     # Since all images are taken with the same camera, the object points are the same
     objp = make_object_points(horizontal_corners, vertical_corners, square_size)  # 3D points in real world space
