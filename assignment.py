@@ -8,23 +8,25 @@ block_size = 1.0
 def generate_grid(width, depth):
     # Generates the floor grid locations
     # You don't need to edit this function
-    data = []
+    data, colors = [], []
     for x in range(width):
         for z in range(depth):
             data.append([x*block_size - width/2, -block_size, z*block_size - depth/2])
-    return data
+            colors.append([1.0, 1.0, 1.0] if (x+z) % 2 == 0 else [0, 0, 0])
+    return data, colors
 
 
 def set_voxel_positions(width, height, depth):
     # Generates random voxel locations
     # TODO: You need to calculate proper voxel arrays instead of random ones.
-    data = []
+    data, colors = [], []
     for x in range(width):
         for y in range(height):
             for z in range(depth):
                 if random.randint(0, 1000) < 5:
                     data.append([x*block_size - width/2, y*block_size, z*block_size - depth/2])
-    return data
+                    colors.append([x / width, z / depth, y / height])
+    return data, colors
 
 
 def get_cam_positions():
@@ -33,7 +35,8 @@ def get_cam_positions():
     return [[-64 * block_size, 64 * block_size, 63 * block_size],
             [63 * block_size, 64 * block_size, 63 * block_size],
             [63 * block_size, 64 * block_size, -64 * block_size],
-            [-64 * block_size, 64 * block_size, -64 * block_size]]
+            [-64 * block_size, 64 * block_size, -64 * block_size]], \
+        [[1.0, 0, 0], [0, 1.0, 0], [0, 0, 1.0], [1.0, 1.0, 0]]
 
 
 def get_cam_rotation_matrices():

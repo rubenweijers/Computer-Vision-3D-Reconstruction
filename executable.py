@@ -117,12 +117,12 @@ def main():
     depth = load_texture_2d('resources/textures/depth.jpg')
     depth_grid = load_texture_2d('resources/textures/depth_grid.jpg')
 
-    grid_positions = generate_grid(config['world_width'], config['world_width'])
-    square.set_multiple_positions(grid_positions)
+    grid_positions, grid_colors = generate_grid(config['world_width'], config['world_width'])
+    square.set_multiple_positions(grid_positions, grid_colors)
 
-    cam_positions = get_cam_positions()
+    cam_positions, cam_colors = get_cam_positions()
     for c, cam_pos in enumerate(cam_positions):
-        cam_shapes[c].set_multiple_positions([cam_pos])
+        cam_shapes[c].set_multiple_positions([cam_pos], [cam_colors[c]])
 
     last_time = glfw.get_time()
     while not glfw.window_should_close(window):
@@ -179,8 +179,8 @@ def key_callback(window, key, scancode, action, mods):
         glfw.set_window_should_close(window, glfw.TRUE)
     if key == glfw.KEY_G and action == glfw.PRESS:
         global cube
-        positions = set_voxel_positions(config['world_width'], config['world_height'], config['world_width'])
-        cube.set_multiple_positions(positions)
+        positions, colors = set_voxel_positions(config['world_width'], config['world_height'], config['world_width'])
+        cube.set_multiple_positions(positions, colors)
 
 
 def mouse_move(win, pos_x, pos_y):
