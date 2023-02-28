@@ -40,16 +40,35 @@ if __name__ == "__main__":
 
         background_substraction = cv2.createBackgroundSubtractorMOG2(history=100, varThreshold=16, detectShadows=True)
 
+        # Training phase
         for frame in frames_background:
             mask_background = background_substraction.apply(frame, learningRate=0.01)
-            cv2.imshow("", mask_background)
+            # cv2.imshow("", mask_background)
             # Pause for 1 ms
-            cv2.waitKey(1)
+            # cv2.waitKey(1)
 
+        # Inference phase
         for frame in frames_foreground:
             mask_background = background_substraction.apply(frame, learningRate=0)
-            cv2.imshow("", mask_background)
-            # Pause for 1 ms
+            # Remove shadow from the mask
+            mask_background[mask_background == 127] = 0
+
+            # Find biggest contour in the mask
+            # TODO: make sure gaps, e.g. between the legs, are not filled
+            all_contours, _ = cv2.findContours(mask_background, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            if len(all_contours) > 0:  # If there are any contours
+                contour_max = max(all_contours, key=cv2.contourArea)
+                # Draw the contour
+                # cv2.drawContours(frame, [contour_max], -1, (0, 255, 0), 2)
+
+            # Only keep pixels within the contour
+            mask_contour = np.zeros(mask_background.shape, dtype=np.uint8)
+            cv2.drawContours(mask_contour, [contour_max], -1, 255, -1)
+            mask_background = cv2.bitwise_and(mask_background, mask_background, mask=mask_contour)
+
+            frame = cv2.bitwise_and(frame, frame, mask=mask_background)
+
+            cv2.imshow("", frame)
             cv2.waitKey(1)
 
         cv2.waitKey(0)
