@@ -66,9 +66,14 @@ if __name__ == "__main__":
             cv2.drawContours(mask_contour, [contour_max], -1, 255, -1)
             mask_foreground = cv2.bitwise_and(mask_foreground, mask_contour)
 
+            # Apply erosion and dilation to remove noise
+            kernel = np.ones((3, 3), np.uint8)
+            mask_foreground = cv2.dilate(mask_foreground, kernel, iterations=1)
+            mask_foreground = cv2.erode(mask_foreground, kernel, iterations=1)
+
             frame = cv2.bitwise_and(frame, frame, mask=mask_foreground)
 
-            cv2.imshow("", mask_contour)
+            cv2.imshow("", frame)
             cv2.waitKey(1)
 
         cv2.waitKey(0)
