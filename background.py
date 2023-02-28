@@ -48,12 +48,12 @@ def background_substraction(frames_background, frames_foreground) -> list:
 
 
 if __name__ == "__main__":
-    fps_backgrounds = ["./data/cam1/background.avi", "./data/cam2/background.avi",
-                       "./data/cam3/background.avi", "./data/cam4/background.avi"]
+    fps_background = ["./data/cam1/background.avi", "./data/cam2/background.avi",
+                      "./data/cam3/background.avi", "./data/cam4/background.avi"]
     fps_foreground = ["./data/cam1/video.avi", "./data/cam2/video.avi",
                       "./data/cam3/video.avi", "./data/cam4/video.avi"]
 
-    for c, fp_video in enumerate(fps_backgrounds):
+    for c, fp_video in enumerate(fps_background):
         frames_background = read_frames(fp_video)
         if frames_background is None:
             print(f"Could not read frames from {fp_video}")

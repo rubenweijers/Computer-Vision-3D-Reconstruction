@@ -45,6 +45,6 @@ if __name__ == "__main__":
         with open(fps_json[camera], "w") as f:
             f.write(dump)
 
-            # Write to pickle
+        # Write to pickle
         with open(fps_json[camera].replace(".json", ".pickle"), "wb") as f:
             pickle.dump(data, f)
