@@ -1,5 +1,7 @@
-import glm
+import pickle
 import random
+
+import glm
 import numpy as np
 
 block_size = 1.0
@@ -19,14 +21,31 @@ def generate_grid(width, depth):
 def set_voxel_positions(width, height, depth):
     # Generates random voxel locations
     # TODO: You need to calculate proper voxel arrays instead of random ones.
-    data, colors = [], []
-    for x in range(width):
-        for y in range(height):
-            for z in range(depth):
-                if random.randint(0, 1000) < 5:
-                    data.append([x*block_size - width/2, y*block_size, z*block_size - depth/2])
-                    colors.append([x / width, z / depth, y / height])
-    return data, colors
+
+    # Load the voxel data from pickle
+    with open("./data/voxels.pickle", "rb") as f:
+        data_pickle = pickle.load(f)
+
+    data = []
+    colours = []
+    for frame in data_pickle["voxels"][:1]:
+        for camera in frame:
+            for voxel in camera:
+                voxel = [v / data_pickle["voxel_size"] for v in voxel]
+
+                data.append(voxel)
+                colours.append([voxel[0] / width, voxel[2] / depth, voxel[1] / height])
+
+    return data, colours
+
+    # data, colors = [], []
+    # for x in range(width):
+    #     for y in range(height):
+    #         for z in range(depth):
+    #             if random.randint(0, 1000) < 5:
+    #                 data.append([x*block_size - width/2, y*block_size, z*block_size - depth/2])
+    #                 colors.append([x / width, z / depth, y / height])
+    # return data, colors
 
 
 def get_cam_positions():
