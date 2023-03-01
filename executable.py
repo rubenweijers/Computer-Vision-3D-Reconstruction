@@ -1,14 +1,16 @@
-import glm
 import glfw
+import glm
+
+from assignment import (generate_grid, get_cam_positions,
+                        get_cam_rotation_matrices, set_voxel_positions)
 from engine.base.program import get_linked_program
-from engine.renderable.model import Model
-from engine.buffer.texture import *
-from engine.buffer.hdrbuffer import HDRBuffer
 from engine.buffer.blurbuffer import BlurBuffer
-from engine.effect.bloom import Bloom
-from assignment import set_voxel_positions, generate_grid, get_cam_positions, get_cam_rotation_matrices
+from engine.buffer.hdrbuffer import HDRBuffer
+from engine.buffer.texture import *
 from engine.camera import Camera
 from engine.config import config
+from engine.effect.bloom import Bloom
+from engine.renderable.model import Model
 
 cube, hdrbuffer, blurbuffer, lastPosX, lastPosY = None, None, None, None, None
 firstTime = True
