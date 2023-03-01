@@ -1,8 +1,10 @@
+import pickle
+
 import cv2
 import numpy as np
 
 from background import background_substraction
-from calibration import make_object_points, read_frames
+from calibration import read_frames
 from data_processing import load_pickle
 
 
@@ -31,7 +33,7 @@ def make_voxel_lookup_table(camera_params, voxel_size=115, number_of_voxels=1150
     return voxel_lookup_table
 
 
-def select_voxels(frame, voxel_lookup_table, voxel_size=115, number_of_voxels=1150):
+def select_voxels(frame, voxel_lookup_table, voxel_size=115, number_of_voxels=1150, debug: bool = False):
     voxel_points = []
     skipped = 0
 
@@ -41,14 +43,17 @@ def select_voxels(frame, voxel_lookup_table, voxel_size=115, number_of_voxels=11
                 image_points = voxel_lookup_table[(x, y, z)]
 
                 # Skip if out of bounds
-                if image_points[0] >= frame.shape[0] or image_points[1] >= frame.shape[1]:
+                if image_points[0] >= frame.shape[0] or image_points[1] >= frame.shape[1] or image_points[0] < 0 or image_points[1] < 0:
                     skipped += 1
+                    if debug:
+                        print(f"Skipped voxel ({x}, {y}, {z}) with image point ({image_points[0]:.0f}, {image_points[1]:.0f})")
                     continue
 
                 if frame[int(image_points[0]), int(image_points[1])] == 255:  # If the image point is masked, add voxel to list
                     voxel_points.append((x, y, z))
 
-    print(f"Skipped {skipped} voxels")
+    if skipped > 0:
+        print(f"Skipped {skipped} voxels ({skipped / (number_of_voxels / voxel_size) ** 3 * 100:.2f} %)")
     return voxel_points
 
 
@@ -61,6 +66,9 @@ if __name__ == "__main__":
     fps_config = ["./data/cam1/config.pickle", "./data/cam2/config.pickle",
                   "./data/cam3/config.pickle", "./data/cam4/config.pickle"]
     fp_xml = "./data/checkerboard.xml"
+
+    voxel_size = 115
+    number_of_voxels = 3000
 
     output_masks = []
     lookup_tables = []
@@ -78,14 +86,22 @@ if __name__ == "__main__":
         output_colour, output_mask = background_substraction(frames_background, frames_foreground)
 
         camera_params = load_pickle(fps_config[camera])
-        voxel_lookup_table = make_voxel_lookup_table(camera_params)
+        voxel_lookup_table = make_voxel_lookup_table(camera_params, voxel_size=voxel_size, number_of_voxels=number_of_voxels)
 
         lookup_tables.append(voxel_lookup_table)
         output_masks.append(output_mask)
 
-    for frame_n in range(len(output_masks[0])):
+    voxels = []
+    for frame_n in range(len(output_masks[0]))[:2]:  # TODO: only first two frames for debugging
         voxel_points = []
         for camera, mask in enumerate(output_masks):
-            voxel_points += select_voxels(mask[frame_n], lookup_tables[camera])
+            voxel_points.append(select_voxels(mask[frame_n], lookup_tables[camera],
+                                voxel_size=voxel_size, number_of_voxels=number_of_voxels, debug=False))
 
-        print(len(voxel_points), len(set(voxel_points)))
+        print(f"Number of voxels for each camera: {[len(p) for p in voxel_points]}")
+
+        voxels.append(voxel_points)
+
+    # Write voxels to pickle
+    with open("./data/voxels.pickle", "wb") as fp:
+        pickle.dump({"voxels": voxels, "voxel_size": voxel_size}, fp)
