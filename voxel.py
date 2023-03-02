@@ -2,6 +2,7 @@ import pickle
 
 import cv2
 import numpy as np
+from tqdm import trange
 
 from background import background_substraction
 from calibration import read_frames
@@ -20,7 +21,7 @@ def make_voxel_lookup_table(camera_params, lowerbound=-750, upperbound=750, step
     translation_vectors = np.array(extrinsics["translation_vector"], dtype=np.float32)
 
     voxel_lookup_table = {}
-    for x in range(lowerbound, upperbound, stepsize):
+    for x in trange(lowerbound, upperbound, stepsize, desc="Generating voxel lookup table"):
         for y in range(lowerbound, upperbound, stepsize):
             for z in range(lowerbound, upperbound, stepsize):
                 voxel = np.array([x, y, z], dtype=np.float32)  # Real-world coordinates
@@ -37,7 +38,7 @@ def select_voxels(frame, voxel_lookup_table, lowerbound=-750, upperbound=750, st
     voxel_points = []
     skipped = 0
 
-    for x in range(lowerbound, upperbound, stepsize):
+    for x in trange(lowerbound, upperbound, stepsize, desc="Selecting voxels"):
         for y in range(lowerbound, upperbound, stepsize):
             for z in range(lowerbound, upperbound, stepsize):
                 image_points = voxel_lookup_table[(x, y, z)]
@@ -53,7 +54,7 @@ def select_voxels(frame, voxel_lookup_table, lowerbound=-750, upperbound=750, st
                     voxel_points.append((x, y, z))
 
     if skipped > 0:
-        print(f"Skipped {skipped} voxels ({skipped / (upperbound - lowerbound) ** 3 * 100:.2f}%)")
+        print(f"Skipped {skipped} voxels ({skipped / (len(voxel_lookup_table) / 100):.2f}%)")
     return voxel_points
 
 
@@ -67,8 +68,8 @@ if __name__ == "__main__":
                   "./data/cam3/config.pickle", "./data/cam4/config.pickle"]
     fp_xml = "./data/checkerboard.xml"
 
-    lowerbound = -750
-    upperbound = 750
+    lowerbound = -1500
+    upperbound = 1500
     stepsize = 30  # mm
     voxel_size = 115  # mm
 
