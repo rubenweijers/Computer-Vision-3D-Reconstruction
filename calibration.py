@@ -69,7 +69,7 @@ def calibrate_camera(frames: list, horizontal_corners: int, vertical_corners: in
     return camera_params
 
 
-def read_frames(fp_video: str):
+def read_frames(fp_video: str, stop_after: int = None):
     """Read all frames from a video file. Returns a list of frames."""
     cap = cv2.VideoCapture(fp_video)
 
@@ -86,6 +86,11 @@ def read_frames(fp_video: str):
             break
 
         frames.append(frame)
+
+        # Stop after X frames, only if X is not None
+        if stop_after is not None and len(frames) >= stop_after:
+            print(f"Stopping after {stop_after} frames")
+            break
 
     cap.release()
     return frames
