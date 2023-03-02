@@ -47,7 +47,9 @@ def set_voxel_positions(width, height, depth):
             for camera in frame:
                 for voxel in camera:
                     # voxel = [v / data_pickle["voxel_size"] for v in voxel]  # Scale the voxel to the block size
-                    voxel = [v // 30 for v in voxel]  # Scale the voxel to the block size
+                    diff = abs(data_pickle["lowerbound"]) + abs(data_pickle["upperbound"])
+                    voxel = [voxel[0], voxel[1] + (diff / 2), voxel[2]]  # Place the voxel on the grid
+                    voxel = [v // data_pickle["stepsize"] for v in voxel]  # Scale the voxel by step size
                     data.append(voxel)
                     colours.append([voxel[0] / width, voxel[2] / depth, voxel[1] / height])
 

@@ -107,4 +107,5 @@ if __name__ == "__main__":
 
     # Write voxels to pickle
     with open("./data/voxels.pickle", "wb") as fp:
-        pickle.dump({"voxels": voxels, "voxel_size": voxel_size}, fp)
+        pickle.dump({"voxels": voxels, "voxel_size": voxel_size,
+                     "lowerbound": lowerbound, "upperbound": upperbound, "stepsize": stepsize}, fp)
