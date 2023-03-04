@@ -9,22 +9,22 @@ from calibration import read_frames
 from data_processing import load_pickle
 
 
-def make_voxel_lookup_table(camera_params, lowerbound=-750, upperbound=750, stepsize=30):
+def make_voxel_lookup_table(camera_params: dict, lowerbound: int = -750, upperbound: int = 750, stepsize: int = 30) -> dict:
     # Intrinsics
     intrinsics = camera_params["intrinsics"]
-    camera_matrix = np.array(intrinsics["camera_matrix"], dtype=np.float32)
-    distortion_coefficients = np.array(intrinsics["distortion_coefficients"], dtype=np.float32)
+    camera_matrix = intrinsics["camera_matrix"]
+    distortion_coefficients = intrinsics["distortion_coefficients"]
 
     # Extrinsics
     extrinsics = camera_params["extrinsics"]
-    rotation_vector = np.array(extrinsics["rotation_vector"], dtype=np.float32)
-    translation_vector = np.array(extrinsics["translation_vector"], dtype=np.float32)
+    rotation_vector = extrinsics["rotation_vector"]
+    translation_vector = extrinsics["translation_vector"]
 
     voxel_lookup_table = {}
     for x in trange(lowerbound, upperbound, stepsize, desc="Generating voxel lookup table"):
         for y in range(lowerbound, upperbound, stepsize):
             for z in range(0, upperbound*2, stepsize):
-                voxel = np.array([x, y, z], dtype=np.float32)  # Real-world coordinates
+                voxel = (x, y, z)  # Real-world coordinates
 
                 image_points, jac = cv2.projectPoints(voxel, rotation_vector, translation_vector,
                                                       camera_matrix, distortion_coefficients)  # 2D image coordinates
@@ -44,7 +44,7 @@ def select_voxels(frame, voxel_lookup_table, lowerbound=-750, upperbound=750, st
                 image_points = voxel_lookup_table[(x, y, z)]
 
                 # Skip if out of bounds
-                if image_points[0] >= frame.shape[0] or image_points[1] >= frame.shape[1] or image_points[0] < 0 or image_points[1] < 0:
+                if image_points[0] < 0 or image_points[0] >= frame.shape[0] or image_points[1] < 0 or image_points[1] >= frame.shape[1]:
                     skipped += 1
                     if debug:
                         print(f"Skipped voxel ({x}, {y}, {z}) with image point ({image_points[0]:.0f}, {image_points[1]:.0f})")
