@@ -1,6 +1,7 @@
 import pickle
 
 import cv2
+import numpy as np
 from tqdm import tqdm, trange
 
 from background import background_substraction
@@ -34,15 +35,16 @@ def make_voxel_lookup_table(camera_params: dict, lowerbound: int = -750, upperbo
 
 def select_voxels(mask, voxel_lookup_table: dict, debug: bool = False) -> list:
     """Filters voxels that are visible in the image and are not masked out."""
-    if debug:  # Get max and min of image points to find outliers
-        min_x = min([value[0] for value in voxel_lookup_table.values()])
-        max_x = max([value[0] for value in voxel_lookup_table.values()])
-        min_y = min([value[1] for value in voxel_lookup_table.values()])
-        max_y = max([value[1] for value in voxel_lookup_table.values()])
-        print(f"({min_x=}, {max_x=}, {min_y=}, {max_y=})")
+    # if debug:  # Get max and min of image points to find outliers
+    min_x = round(min([value[0] for value in voxel_lookup_table.values()]), 2)
+    max_x = round(max([value[0] for value in voxel_lookup_table.values()]), 2)
+    min_y = round(min([value[1] for value in voxel_lookup_table.values()]), 2)
+    max_y = round(max([value[1] for value in voxel_lookup_table.values()]), 2)
+    print(f"({min_x=}, {max_x=}, {min_y=}, {max_y=})")
 
     skipped = 0
     voxel_points = []
+    image_points_all = []
     for key, value in tqdm(voxel_lookup_table.items()):
         image_points = value
         x, y, z = key
@@ -54,11 +56,13 @@ def select_voxels(mask, voxel_lookup_table: dict, debug: bool = False) -> list:
             continue
 
         if mask[int(image_points[0]), int(image_points[1])] == 255:  # If the image point is masked, add voxel to list
+            image_points_all.append(image_points)
             voxel_points.append(key)
 
     if skipped > 0:
         print(f"{skipped} voxels out of bounds ({skipped / (len(voxel_lookup_table) / 100):.2f}%)")
-    return voxel_points
+
+    return voxel_points, image_points_all
 
 
 if __name__ == "__main__":
@@ -73,10 +77,11 @@ if __name__ == "__main__":
 
     lowerbound = -1500
     upperbound = 1500
-    stepsize = 30  # mm
+    stepsize = 300  # mm
     voxel_size = 115  # mm
 
     output_masks = []
+    output_colours = []
     lookup_tables = []
     for camera, fp_video in enumerate(fps_background):
         frames_background = read_frames(fp_video, stop_after=2)
@@ -96,12 +101,16 @@ if __name__ == "__main__":
 
         lookup_tables.append(voxel_lookup_table)
         output_masks.append(output_mask)
+        output_colours.append(frames_foreground)
 
     voxels = []
     for frame_n in range(len(output_masks[0]))[:1]:  # TODO: only first two frames for debugging
         voxel_points = []
+        image_points_all = []
         for camera, mask in enumerate(output_masks):
-            voxel_points.append(select_voxels(mask[frame_n], lookup_tables[camera], debug=False))
+            cam_voxels, image_points = select_voxels(mask[frame_n], lookup_tables[camera], debug=False)
+            voxel_points.append(cam_voxels)
+            image_points_all.append(image_points)
 
         print(f"Number of voxels for each camera: {[len(p) for p in voxel_points]}")
 
@@ -111,3 +120,30 @@ if __name__ == "__main__":
     with open("./data/voxels.pickle", "wb") as fp:
         pickle.dump({"voxels": voxels, "voxel_size": voxel_size,
                      "lowerbound": lowerbound, "upperbound": upperbound, "stepsize": stepsize}, fp)
+
+    # Plot all voxels for each camera, add colour to each camera
+    import matplotlib.pyplot as plt
+    fig, axs = plt.subplots(2, 2, sharex=True, sharey=True)
+    for i, lookup_table in enumerate(lookup_tables):
+        values = np.array(list(lookup_table.values()))
+
+        # Clip outliers
+        values = values[values[:, 0] >= 0]
+        values = values[values[:, 0] < output_colours[i][0].shape[0]]
+        values = values[values[:, 1] >= 0]
+        values = values[values[:, 1] < output_colours[i][0].shape[1]]
+
+        # Draw points on first frame
+        for point in values:
+            # PROBLEM: voxels are not drawn where they are supposed to be
+            cv2.circle(output_colours[i][0], (int(point[0]), int(point[1])), 2, (0, 0, 255), -1)
+
+        cv2.imshow(f"Camera {i+1}", output_colours[i][0])
+        cv2.waitKey(0)
+
+        # TODO: Move axis from opencv to matplotlib coordinates
+        output_colours[i][0] = cv2.cvtColor(output_colours[i][0], cv2.COLOR_BGR2RGB)
+        axs[i // 2, i % 2].imshow(output_colours[i][0])
+        axs[i // 2, i % 2].scatter(values[:, 0], values[:, 1], s=1)
+        axs[i // 2, i % 2].set_title(f"Camera {i+1}")
+    plt.show()
