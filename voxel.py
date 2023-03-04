@@ -17,8 +17,8 @@ def make_voxel_lookup_table(camera_params, lowerbound=-750, upperbound=750, step
 
     # Extrinsics
     extrinsics = camera_params["extrinsics"]
-    rotation_vectors = np.array(extrinsics["rotation_vector"], dtype=np.float32)
-    translation_vectors = np.array(extrinsics["translation_vector"], dtype=np.float32)
+    rotation_vector = np.array(extrinsics["rotation_vector"], dtype=np.float32)
+    translation_vector = np.array(extrinsics["translation_vector"], dtype=np.float32)
 
     voxel_lookup_table = {}
     for x in trange(lowerbound, upperbound, stepsize, desc="Generating voxel lookup table"):
@@ -26,7 +26,7 @@ def make_voxel_lookup_table(camera_params, lowerbound=-750, upperbound=750, step
             for z in range(lowerbound, upperbound, stepsize):
                 voxel = np.array([x, y, z], dtype=np.float32)  # Real-world coordinates
 
-                image_points, jac = cv2.projectPoints(voxel, rotation_vectors, translation_vectors,
+                image_points, jac = cv2.projectPoints(voxel, rotation_vector, translation_vector,
                                                       camera_matrix, distortion_coefficients)  # 2D image coordinates
 
                 voxel_lookup_table[(x, y, z)] = image_points.flatten()
