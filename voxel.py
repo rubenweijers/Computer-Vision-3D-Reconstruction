@@ -34,24 +34,29 @@ def make_voxel_lookup_table(camera_params: dict, lowerbound: int = -750, upperbo
     return voxel_lookup_table
 
 
-def select_voxels(frame, voxel_lookup_table, lowerbound=-750, upperbound=750, stepsize=30, debug=False):
-    voxel_points = []
+def select_voxels(mask, voxel_lookup_table: dict, debug: bool = False) -> list:
+    """Filters voxels that are visible in the image and are not masked out."""
+    if debug:  # Get max and min of image points to find outliers
+        min_x = min([value[0] for value in voxel_lookup_table.values()])
+        max_x = max([value[0] for value in voxel_lookup_table.values()])
+        min_y = min([value[1] for value in voxel_lookup_table.values()])
+        max_y = max([value[1] for value in voxel_lookup_table.values()])
+        print(f"({min_x=}, {max_x=}, {min_y=}, {max_y=})")
+
     skipped = 0
+    voxel_points = []
+    for key, value in voxel_lookup_table.items():
+        image_points = value
+        x, y, z = key
 
-    for x in trange(lowerbound, upperbound, stepsize, desc="Selecting voxels"):
-        for y in range(lowerbound, upperbound, stepsize):
-            for z in range(0, upperbound*2, stepsize):
-                image_points = voxel_lookup_table[(x, y, z)]
+        if image_points[0] < 0 or image_points[0] >= mask.shape[0] or image_points[1] < 0 or image_points[1] >= mask.shape[1]:
+            skipped += 1
+            if debug:
+                print(f"Skipped voxel ({x=}, {y=}, {z=}) with image point ({image_points[0]:.0f}, {image_points[1]:.0f})")
+            continue
 
-                # Skip if out of bounds
-                if image_points[0] < 0 or image_points[0] >= frame.shape[0] or image_points[1] < 0 or image_points[1] >= frame.shape[1]:
-                    skipped += 1
-                    if debug:
-                        print(f"Skipped voxel ({x}, {y}, {z}) with image point ({image_points[0]:.0f}, {image_points[1]:.0f})")
-                    continue
-
-                if frame[int(image_points[0]), int(image_points[1])] == 255:  # If the image point is masked, add voxel to list
-                    voxel_points.append((x, y, z))
+        if mask[int(image_points[0]), int(image_points[1])] == 255:  # If the image point is masked, add voxel to list
+            voxel_points.append(key)
 
     if skipped > 0:
         print(f"Skipped {skipped} voxels ({skipped / (len(voxel_lookup_table) / 100):.2f}%)")
@@ -98,8 +103,7 @@ if __name__ == "__main__":
     for frame_n in range(len(output_masks[0]))[:1]:  # TODO: only first two frames for debugging
         voxel_points = []
         for camera, mask in enumerate(output_masks):
-            voxel_points.append(select_voxels(mask[frame_n], lookup_tables[camera],
-                                              lowerbound=lowerbound, upperbound=upperbound, stepsize=stepsize, debug=False))
+            voxel_points.append(select_voxels(mask[frame_n], lookup_tables[camera], debug=False))
 
         print(f"Number of voxels for each camera: {[len(p) for p in voxel_points]}")
 
