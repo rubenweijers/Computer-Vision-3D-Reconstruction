@@ -43,16 +43,22 @@ def set_voxel_positions(width, height, depth):
             data.extend(intersection)
             print(len(data))
     else:
+        diff = abs(data_pickle["lowerbound"]) + abs(data_pickle["upperbound"]) / 2  # Find the difference between the bounds
         for frame in data_pickle["voxels"][:1]:
             for camera in frame:
                 for voxel in camera:
                     # voxel = [v / data_pickle["voxel_size"] for v in voxel]  # Scale the voxel to the block size
-                    diff = abs(data_pickle["lowerbound"]) + abs(data_pickle["upperbound"])
-                    voxel = [voxel[0], voxel[1] + (diff / 2), voxel[2]]  # Place the voxel on the grid
-                    voxel = [v // data_pickle["stepsize"] for v in voxel]  # Scale the voxel by step size
+                    voxel = (voxel[0], voxel[1] + diff, voxel[2])  # Place the voxel on the grid
+                    voxel = tuple(v // data_pickle["stepsize"] for v in voxel)  # Scale the voxel by step size
                     data.append(voxel)
-                    colours.append([voxel[0] / width, voxel[2] / depth, voxel[1] / height])
+                    colours.append((voxel[0] / width, voxel[2] / depth, voxel[1] / height))
 
+    # Only keep unique voxels
+    print(f"Number of voxels: {len(data)}")
+    idx = np.unique(data, axis=0, return_index=True)[1]  # Get the unique indices
+    data = np.array(data)[idx].tolist()
+    colours = np.array(colours)[idx].tolist()
+    print(f"Number of unique voxels: {len(data)}")
     return data, colours
 
 
