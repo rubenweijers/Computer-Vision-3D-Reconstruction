@@ -44,6 +44,7 @@ def set_voxel_positions(width, height, depth):
         for frame in data_pickle["voxels"][:1]:  # TODO: Change to all frames
             for camera in frame:
                 for voxel in camera:
+                    voxel = [voxel[0], voxel[2], voxel[1]]  # Swap the y and z axis, TODO: rotate y axis by 90 degrees
                     voxel = tuple(v // data_pickle["stepsize"] * block_size for v in voxel)  # Scale the voxel by step size
 
                     data.append(voxel)
