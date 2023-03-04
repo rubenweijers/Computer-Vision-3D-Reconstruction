@@ -22,7 +22,7 @@ def make_voxel_lookup_table(camera_params, lowerbound=-750, upperbound=750, step
 
     voxel_lookup_table = {}
     for x in trange(lowerbound, upperbound, stepsize, desc="Generating voxel lookup table"):
-        for y in range(lowerbound, upperbound, stepsize):
+        for y in range(0, upperbound*2, stepsize):
             for z in range(lowerbound, upperbound, stepsize):
                 voxel = np.array([x, y, z], dtype=np.float32)  # Real-world coordinates
 
@@ -39,7 +39,7 @@ def select_voxels(frame, voxel_lookup_table, lowerbound=-750, upperbound=750, st
     skipped = 0
 
     for x in trange(lowerbound, upperbound, stepsize, desc="Selecting voxels"):
-        for y in range(lowerbound, upperbound, stepsize):
+        for y in range(0, upperbound*2, stepsize):
             for z in range(lowerbound, upperbound, stepsize):
                 image_points = voxel_lookup_table[(x, y, z)]
 
