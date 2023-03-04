@@ -1,6 +1,7 @@
 import json
 import pickle
 
+import cv2
 import numpy as np
 
 
@@ -48,3 +49,16 @@ if __name__ == "__main__":
         # Write to pickle
         with open(fps_json[camera].replace(".json", ".pickle"), "wb") as f:
             pickle.dump(data, f)
+
+    for camera in range(len(fps_camera_params)):
+        data = load_pickle(fps_json[camera].replace(".json", ".pickle"))
+        extrinsics = data["extrinsics"]
+        rotation_vector = extrinsics["rotation_vector"]
+        translation_vector = extrinsics["translation_vector"]
+
+        # Convert rotation vector to rotation matrix
+        rotation_matrix, _ = cv2.Rodrigues(rotation_vector)
+
+        print(f"Camera {camera + 1}:")
+        print(f"Rotation matrix (3x3):\n{rotation_matrix.round(2)}")
+        print(f"Translation vector (1x3): {translation_vector.round(2).flatten()}")
