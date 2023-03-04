@@ -1,8 +1,7 @@
 import pickle
 
 import cv2
-import numpy as np
-from tqdm import trange
+from tqdm import tqdm, trange
 
 from background import background_substraction
 from calibration import read_frames
@@ -28,7 +27,6 @@ def make_voxel_lookup_table(camera_params: dict, lowerbound: int = -750, upperbo
 
                 image_points, jac = cv2.projectPoints(voxel, rotation_vector, translation_vector,
                                                       camera_matrix, distortion_coefficients)  # 2D image coordinates
-
                 voxel_lookup_table[(x, y, z)] = image_points.flatten()
 
     return voxel_lookup_table
@@ -45,7 +43,7 @@ def select_voxels(mask, voxel_lookup_table: dict, debug: bool = False) -> list:
 
     skipped = 0
     voxel_points = []
-    for key, value in voxel_lookup_table.items():
+    for key, value in tqdm(voxel_lookup_table.items()):
         image_points = value
         x, y, z = key
 
@@ -59,7 +57,7 @@ def select_voxels(mask, voxel_lookup_table: dict, debug: bool = False) -> list:
             voxel_points.append(key)
 
     if skipped > 0:
-        print(f"Skipped {skipped} voxels ({skipped / (len(voxel_lookup_table) / 100):.2f}%)")
+        print(f"{skipped} voxels out of bounds ({skipped / (len(voxel_lookup_table) / 100):.2f}%)")
     return voxel_points
 
 
