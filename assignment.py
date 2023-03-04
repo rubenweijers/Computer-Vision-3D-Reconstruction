@@ -35,10 +35,12 @@ def set_voxel_positions(width, height, depth):
             intersection = set.intersection(*map(set, frame))  # Find the intersection of all sets
 
             for voxel in intersection:
-                # voxel = [v / data_pickle["voxel_size"] for v in voxel]
+                voxel = [voxel[0], voxel[2], voxel[1]]  # Swap the y and z axis, TODO: rotate y axis by 90 degrees
+                voxel = tuple(v // data_pickle["stepsize"] * block_size for v in voxel)  # Scale the voxel by step size
+
+                data.append(voxel)
                 colours.append([voxel[0] / width, voxel[2] / depth, voxel[1] / height])
 
-            data.extend(intersection)
             print(len(data))
     else:
         for frame in data_pickle["voxels"][:1]:  # TODO: Change to all frames
