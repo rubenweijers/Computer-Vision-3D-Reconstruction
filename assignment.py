@@ -95,14 +95,30 @@ def get_cam_positions():
 
 
 def get_cam_rotation_matrices():
-    # Generates dummy camera rotation matrices, looking down 45 degrees towards the center of the room
-    # TODO: You need to input the estimated camera rotation matrices (4x4) of the 4 cameras in the world coordinates.
-    cam_angles = [[0, 45, -45], [0, 135, -45], [0, 225, -45], [0, 315, -45]]
-    cam_rotations = [glm.mat4(1), glm.mat4(1), glm.mat4(1), glm.mat4(1)]
+    fps_config = ["./data/cam1/config.pickle", "./data/cam2/config.pickle",
+                  "./data/cam3/config.pickle", "./data/cam4/config.pickle"]
 
-    for c in range(len(cam_rotations)):
-        cam_rotations[c] = glm.rotate(cam_rotations[c], cam_angles[c][0] * np.pi / 180, [1, 0, 0])
-        cam_rotations[c] = glm.rotate(cam_rotations[c], cam_angles[c][1] * np.pi / 180, [0, 1, 0])
-        cam_rotations[c] = glm.rotate(cam_rotations[c], cam_angles[c][2] * np.pi / 180, [0, 0, 1])
+    swap_vector = np.array([[1, 0, 0, 0],
+                            [0, 0, 1, 0],
+                            [0, -1, 0, 0],
+                            [0, 0, 0, 1]])
 
-    return cam_rotations
+    cam_angles = []
+    for config in fps_config:
+        data = load_pickle(config)
+        extrinsics = data["extrinsics"]
+        rotation_vector = extrinsics["rotation_vector"]
+        # translation_vector = extrinsics["translation_vector"]
+
+        transformation_matrix = np.zeros((4, 4))
+        transformation_matrix[:3, :3] = cv2.Rodrigues(rotation_vector)[0]  # Convert vector to matrix
+
+        # Only first 3 rows and columns are used
+        # transformation_matrix[:3, 3] = translation_vector.flatten() / 115  # Scale the translation vector by the voxel size
+        # transformation_matrix[3, 3] = 1
+
+        # Swap the y and z axis, rotate y axis by 90 degrees
+        transformation_matrix = np.matmul(transformation_matrix, swap_vector)
+        cam_angles.append(glm.mat4(*transformation_matrix.flatten().tolist()))
+
+    return cam_angles
