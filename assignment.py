@@ -26,6 +26,7 @@ def set_voxel_positions(width, height, depth):
 
     # Load the voxel data from pickle
     data_pickle = load_pickle("./data/voxels.pickle")
+    cam_colours = [[1.0, 0], [0, 1.0], [0, 0], [1.0, 1.0]]  # Only first two colours, last is set by height
 
     data = []
     colours = []
@@ -42,13 +43,13 @@ def set_voxel_positions(width, height, depth):
             print(len(data))
     else:
         for frame in data_pickle["voxels"][:1]:  # TODO: Change to all frames
-            for camera in frame:
+            for c, camera in enumerate(frame):
                 for voxel in camera:
                     voxel = [voxel[0], voxel[2], voxel[1]]  # Swap the y and z axis, TODO: rotate y axis by 90 degrees
                     voxel = tuple(v // data_pickle["stepsize"] * block_size for v in voxel)  # Scale the voxel by step size
 
                     data.append(voxel)
-                    colours.append((voxel[0] / width, voxel[2] / depth, voxel[1] / height))
+                    colours.append(cam_colours[c] + [voxel[1] / height])  # First 2 colours are set by camera, last is set by height
 
     # Only keep unique voxels
     print(f"Number of voxels: {len(data)}")
