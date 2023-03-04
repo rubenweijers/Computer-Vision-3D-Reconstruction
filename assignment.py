@@ -1,4 +1,3 @@
-import pickle
 import random
 
 import cv2
@@ -26,8 +25,7 @@ def set_voxel_positions(width, height, depth):
     # TODO: You need to calculate proper voxel arrays instead of random ones.
 
     # Load the voxel data from pickle
-    with open("./data/voxels.pickle", "rb") as f:
-        data_pickle = pickle.load(f)
+    data_pickle = load_pickle("./data/voxels.pickle")
 
     data = []
     colours = []
@@ -43,11 +41,9 @@ def set_voxel_positions(width, height, depth):
             data.extend(intersection)
             print(len(data))
     else:
-        diff = (abs(data_pickle["lowerbound"]) + abs(data_pickle["upperbound"])) / 2  # Find the difference between the bounds
         for frame in data_pickle["voxels"][:1]:  # TODO: Change to all frames
             for camera in frame:
                 for voxel in camera:
-                    voxel = (voxel[0], voxel[1] + diff, voxel[2])  # Place the voxel on the grid
                     voxel = tuple(v // data_pickle["stepsize"] * block_size for v in voxel)  # Scale the voxel by step size
 
                     data.append(voxel)
