@@ -12,8 +12,8 @@ def make_object_points(horizontal_corners: int, vertical_corners: int, square_si
     The object points are the 3D points in real world space.
     """
     # Prepare object points, like (0,0,0), (1,0,0), (2,0,0) ....,(horizontal_corners-1,vertical_corners-1,0)
-    objp = np.zeros((vertical_corners * horizontal_corners, 3), np.float32)
-    objp[:, :2] = np.mgrid[0:vertical_corners, 0:horizontal_corners].T.reshape(-1, 2)
+    objp = np.zeros((horizontal_corners * vertical_corners, 3), np.float32)
+    objp[:, :2] = np.mgrid[0:horizontal_corners, 0:vertical_corners].T.reshape(-1, 2)
     objp *= square_size  # Multiply by square size to get the real world coordinates, in milimeters
     return objp
 
@@ -35,7 +35,7 @@ def calibrate_camera(frames: list, horizontal_corners: int, vertical_corners: in
         img_grey = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
         # Find the chess board corners
-        pattern_found, corners = cv2.findChessboardCorners(img_grey, (vertical_corners, horizontal_corners), None, cv2.CALIB_CB_FAST_CHECK)
+        pattern_found, corners = cv2.findChessboardCorners(img_grey, (horizontal_corners, vertical_corners), None, cv2.CALIB_CB_FAST_CHECK)
 
         # If found, add image points (after refining them)
         if pattern_found:
@@ -98,7 +98,7 @@ def read_frames(fp_video: str, stop_after: int = None):
 
 def read_checkerboard_xml(fp_xml: str) -> tuple:
     """Read the checkerboard dimensions from an XML file."""
-    return 8, 6, 115  # TODO: Read from XML
+    return 6, 8, 115  # TODO: Read from XML
 
 
 def calculate_calibration_stats(camera_params: dict, norm: int = cv2.NORM_L2) -> dict:

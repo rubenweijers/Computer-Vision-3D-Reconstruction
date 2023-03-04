@@ -90,7 +90,7 @@ def calculate_extrinsics(corners: np.ndarray, camera_params: dict, square_size: 
     print("Find the rotation and translation vectors")
 
     # Calculate object points
-    object_points = make_object_points(vertical_corners, horizontal_corners, square_size)
+    object_points = make_object_points(horizontal_corners, vertical_corners, square_size)
 
     # useExtrinsicGuess = False since we don't know the initial rotation and translation vectors
     pattern_found, rot_vec, transl_vec = cv2.solvePnP(object_points, corners,
