@@ -1,5 +1,3 @@
-import random
-
 import cv2
 import glm
 import numpy as np
@@ -27,10 +25,11 @@ def set_voxel_positions(width, height, depth):
     # Load the voxel data from pickle
     data_pickle = load_pickle("./data/voxels.pickle")
     cam_colours = [[1.0, 0], [0, 1.0], [0, 0], [1.0, 1.0]]  # Only first two colours, last is set by height
+    show_cam_colours = False
 
     data = []
     colours = []
-    intersect = False
+    intersect = False  # Set to True to only keep voxels that are in all cameras
     if intersect:
         for frame in data_pickle["voxels"][:1]:  # TODO: Change to all frames
             intersection = set.intersection(*map(set, frame))  # Find the intersection of all sets
@@ -49,7 +48,11 @@ def set_voxel_positions(width, height, depth):
                     voxel = tuple(v // data_pickle["stepsize"] * block_size for v in voxel)  # Scale the voxel by step size
 
                     data.append(voxel)
-                    colours.append(cam_colours[c] + [voxel[1] / height])  # First 2 colours are set by camera, last is set by height
+
+                    if show_cam_colours:  # For debugging, set colours to camera colours
+                        colours.append(cam_colours[c] + [voxel[1] / height])  # First 2 colours are set by camera, last is set by height
+                    else:
+                        colours.append([voxel[0] / width, voxel[2] / depth, voxel[1] / height])
 
     # Only keep unique voxels
     print(f"Number of voxels: {len(data)}")
@@ -61,44 +64,33 @@ def set_voxel_positions(width, height, depth):
 
 
 def get_cam_positions():
-    # Generates dummy camera locations at the 4 corners of the room
-    # TODO: You need to input the estimated locations of the 4 cameras in the world coordinates.
-
+    """Generates camera positions and their colours"""
     # Load camera params from pickle
-    # fps_config = ["./data/cam1/config.pickle", "./data/cam2/config.pickle",
-    #               "./data/cam3/config.pickle", "./data/cam4/config.pickle"]
+    fps_config = ["./data/cam1/config.pickle", "./data/cam2/config.pickle",
+                  "./data/cam3/config.pickle", "./data/cam4/config.pickle"]
 
-    # cam_positions = []
-    # for config in fps_config:
-    #     data = load_pickle(config)
-    #     intrinsics = data["intrinsics"]
-    #     camera_matrix = intrinsics["camera_matrix"]
-    #     distortion_coefficients = intrinsics["distortion_coefficients"]
-    #     # rotation_vector = intrinsics["rotation_vectors"]
-    #     # translation_vector = intrinsics["translation_vectors"]
+    cam_positions = []
+    for config in fps_config:
+        data = load_pickle(config)
 
-    #     extrinsics = data["extrinsics"]
-    #     rotation_vector = extrinsics["rotation_vector"]
-    #     translation_vector = extrinsics["translation_vector"]
+        extrinsics = data["extrinsics"]
+        rotation_vector = extrinsics["rotation_vector"]
+        translation_vector = extrinsics["translation_vector"]
 
-    #     transformation_matrix = np.zeros((4, 4))
-    #     transformation_matrix[:3, :3] = cv2.Rodrigues(rotation_vector)[0]  # Convert vector to matrix
-    #     transformation_matrix[:3, 3] = translation_vector.flatten()
-    #     transformation_matrix[3, 3] = 1
+        transformation_matrix = np.zeros((4, 4))
+        transformation_matrix[:3, :3] = cv2.Rodrigues(rotation_vector)[0]  # Convert vector to matrix
+        transformation_matrix[:3, 3] = translation_vector.flatten() / 115  # Scale the translation vector by the voxel size
+        transformation_matrix[3, 3] = 1
 
-    #     # C = -R^T * T
-    #     # https://math.stackexchange.com/a/83578
-    #     cam_position = -np.matmul(transformation_matrix[:3, :3].T, transformation_matrix[:3, 3])
-    #     cam_position = cam_position.round(2)
-    #     cam_positions.append(cam_position.flatten().tolist())
+        # C = -R^T * T https://math.stackexchange.com/a/83578
+        cam_position = -np.matmul(transformation_matrix[:3, :3].T, transformation_matrix[:3, 3]) * block_size
+        cam_position = cam_position.round(2).flatten().tolist()
+        cam_position = [cam_position[0], -cam_position[2], cam_position[1]]  # Swap the y and z axis, rotate y axis by 90 degrees
+        cam_positions.append(cam_position)
 
     cam_colours = [[1.0, 0, 0], [0, 1.0, 0], [0, 0, 1.0], [1.0, 1.0, 0]]
-    cam_positions = [[-64 * block_size, 64 * block_size, 63 * block_size],
-                     [63 * block_size, 64 * block_size, 63 * block_size],
-                     [63 * block_size, 64 * block_size, -64 * block_size],
-                     [-64 * block_size, 64 * block_size, -64 * block_size]]
 
-    # print(cam_positions)
+    print(cam_positions)
     return cam_positions, cam_colours
 
 
