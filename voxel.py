@@ -1,6 +1,7 @@
 import pickle
 
 import cv2
+import matplotlib.pyplot as plt
 import numpy as np
 from tqdm import tqdm, trange
 
@@ -65,6 +66,36 @@ def select_voxels(mask, voxel_lookup_table: dict, debug: bool = False) -> list:
     return voxel_points, image_points_all
 
 
+def plot_voxels(lookup_tables: list, frame: list, frame_number: int = 0):
+    fig, axs = plt.subplots(2, 2, sharex=True, sharey=True)
+
+    for i, lookup_table in enumerate(lookup_tables):
+        values = np.array(list(lookup_table.values()))
+
+        # Clip outliers
+        values = values[values[:, 0] >= 0]
+        values = values[values[:, 0] < frame[i][frame_number].shape[0]]
+        values = values[values[:, 1] >= 0]
+        values = values[values[:, 1] < frame[i][frame_number].shape[1]]
+
+        # Draw points on first frame
+        # TODO: Move axis from opencv to matplotlib coordinates
+        for point in values:
+            # PROBLEM: voxels are not drawn where they are supposed to be
+            cv2.circle(frame[i][frame_number], (int(point[0]), int(point[1])), 2, (0, 0, 255), -1)
+
+        cv2.imshow(f"Camera {i+1}", frame[i][frame_number])
+        cv2.waitKey(0)
+
+        frame[i][frame_number] = cv2.cvtColor(frame[i][frame_number], cv2.COLOR_BGR2RGB)  # Convert to RGB for matplotlib
+        axs[i // 2, i % 2].imshow(frame[i][frame_number])
+
+        axs[i // 2, i % 2].scatter(values[:, 0], values[:, 1], s=1, c="r")
+        axs[i // 2, i % 2].set_title(f"Camera {i+1}")
+
+    plt.show()
+
+
 if __name__ == "__main__":
     # Calibration mode
     fps_background = ["./data/cam1/background.avi", "./data/cam2/background.avi",
@@ -122,28 +153,4 @@ if __name__ == "__main__":
                      "lowerbound": lowerbound, "upperbound": upperbound, "stepsize": stepsize}, fp)
 
     # Plot all voxels for each camera, add colour to each camera
-    import matplotlib.pyplot as plt
-    fig, axs = plt.subplots(2, 2, sharex=True, sharey=True)
-    for i, lookup_table in enumerate(lookup_tables):
-        values = np.array(list(lookup_table.values()))
-
-        # Clip outliers
-        values = values[values[:, 0] >= 0]
-        values = values[values[:, 0] < output_colours[i][0].shape[0]]
-        values = values[values[:, 1] >= 0]
-        values = values[values[:, 1] < output_colours[i][0].shape[1]]
-
-        # Draw points on first frame
-        for point in values:
-            # PROBLEM: voxels are not drawn where they are supposed to be
-            cv2.circle(output_colours[i][0], (int(point[0]), int(point[1])), 2, (0, 0, 255), -1)
-
-        cv2.imshow(f"Camera {i+1}", output_colours[i][0])
-        cv2.waitKey(0)
-
-        # TODO: Move axis from opencv to matplotlib coordinates
-        output_colours[i][0] = cv2.cvtColor(output_colours[i][0], cv2.COLOR_BGR2RGB)
-        axs[i // 2, i % 2].imshow(output_colours[i][0])
-        axs[i // 2, i % 2].scatter(values[:, 0], values[:, 1], s=1)
-        axs[i // 2, i % 2].set_title(f"Camera {i+1}")
-    plt.show()
+    plot_voxels(lookup_tables, output_colours, frame_number=0)
