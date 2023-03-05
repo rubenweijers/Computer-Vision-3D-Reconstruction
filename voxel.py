@@ -29,7 +29,7 @@ def make_voxel_lookup_table(camera_params: dict, upperbound: int = 750, stepsize
 
                 image_points, jac = cv2.projectPoints(voxel, rotation_vector, translation_vector,
                                                       camera_matrix, distortion_coefficients)  # 2D image coordinates
-                voxel_lookup_table[(x, y, z)] = image_points.flatten()
+                voxel_lookup_table[voxel] = image_points.flatten()
 
     return voxel_lookup_table
 
@@ -51,7 +51,7 @@ def select_voxels(mask, voxel_lookup_table: dict, debug: bool = False) -> list:
         x, y, z = key
 
         try:
-            if mask[int(image_points[0]), int(image_points[1])] == 255:  # If the image point is masked, add voxel to list
+            if mask[int(image_points[1]), int(image_points[0])] == 255:  # If the image point is masked, add voxel to list
                 image_points_all.append(image_points)
                 voxel_points.append(key)
         except IndexError:

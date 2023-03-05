@@ -29,13 +29,13 @@ def set_voxel_positions(width, height, depth):
 
     data = []
     colours = []
-    intersect = False  # Set to True to only keep voxels that are in all cameras
+    intersect = True  # Set to True to only keep voxels that are in all cameras
     if intersect:
         for frame in data_pickle["voxels"][:1]:  # TODO: Change to all frames
             intersection = set.intersection(*map(set, frame))  # Find the intersection of all sets
 
             for voxel in intersection:
-                voxel = [voxel[0], voxel[2], voxel[1]]  # Swap the y and z axis, TODO: rotate y axis by 90 degrees
+                voxel = [voxel[0], -voxel[2], voxel[1]]  # Swap the y and z axis, TODO: rotate y axis by 90 degrees
                 voxel = tuple(v // data_pickle["stepsize"] * block_size for v in voxel)  # Scale the voxel by step size
 
                 data.append(voxel)
