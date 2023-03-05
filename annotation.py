@@ -144,7 +144,7 @@ def on_click(event, x, y, flags, param) -> None:
         if not os.path.exists(param["fp_output"]):
             all_points = {}
         else:
-            with open(param["fp_output"], "rb") as f:
+            with open(param["fp_output"], "rb") as f:  # Append to existing pickle file, overwrite old annotations
                 all_points = pickle.load(f)
 
         # Add new points, overwriting old annotations if they exist
