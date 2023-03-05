@@ -10,7 +10,7 @@ from calibration import read_frames
 from data_processing import load_pickle
 
 
-def make_voxel_lookup_table(camera_params: dict, lowerbound: int = -750, upperbound: int = 750, stepsize: int = 30) -> dict:
+def make_voxel_lookup_table(camera_params: dict, upperbound: int = 750, stepsize: int = 30) -> dict:
     # Intrinsics
     intrinsics = camera_params["intrinsics"]
     camera_matrix = intrinsics["camera_matrix"]
@@ -22,10 +22,10 @@ def make_voxel_lookup_table(camera_params: dict, lowerbound: int = -750, upperbo
     translation_vector = extrinsics["translation_vector"]
 
     voxel_lookup_table = {}
-    for x in trange(lowerbound, upperbound, stepsize, desc="Generating voxel lookup table"):
-        for y in range(lowerbound, upperbound, stepsize):
-            for z in range(0, upperbound*2, stepsize):
-                voxel = (x, y, z)  # Real-world coordinates
+    for x in trange(0, upperbound, stepsize, desc="Generating voxel lookup table"):
+        for y in range(0, upperbound, stepsize):
+            for z in range(-upperbound * 2, 0, stepsize):
+                voxel = (x, y, z)  # Real-world coorsdinates
 
                 image_points, jac = cv2.projectPoints(voxel, rotation_vector, translation_vector,
                                                       camera_matrix, distortion_coefficients)  # 2D image coordinates
@@ -50,15 +50,16 @@ def select_voxels(mask, voxel_lookup_table: dict, debug: bool = False) -> list:
         image_points = value
         x, y, z = key
 
-        if image_points[0] < 0 or image_points[0] >= mask.shape[0] or image_points[1] < 0 or image_points[1] >= mask.shape[1]:
+        try:
+            if mask[int(image_points[0]), int(image_points[1])] == 255:  # If the image point is masked, add voxel to list
+                image_points_all.append(image_points)
+                voxel_points.append(key)
+        except IndexError:
+            # if image_points[0] < 0 or image_points[0] >= mask.shape[0] or image_points[1] < 0 or image_points[1] >= mask.shape[1]
+
             skipped += 1
             if debug:
                 print(f"Skipped voxel ({x=}, {y=}, {z=}) with image point ({image_points[0]:.0f}, {image_points[1]:.0f})")
-            continue
-
-        if mask[int(image_points[0]), int(image_points[1])] == 255:  # If the image point is masked, add voxel to list
-            image_points_all.append(image_points)
-            voxel_points.append(key)
 
     if skipped > 0:
         print(f"{skipped} voxels out of bounds ({skipped / (len(voxel_lookup_table) / 100):.2f}%)")
@@ -74,9 +75,9 @@ def plot_voxels(lookup_tables: list, frame: list, frame_number: int = 0):
 
         # Clip outliers
         values = values[values[:, 0] >= 0]
-        values = values[values[:, 0] < frame[i][frame_number].shape[0]]
         values = values[values[:, 1] >= 0]
-        values = values[values[:, 1] < frame[i][frame_number].shape[1]]
+        values = values[values[:, 0] < frame[i][frame_number].shape[1]]
+        values = values[values[:, 1] < frame[i][frame_number].shape[0]]
 
         # Draw points on first frame
         # TODO: Move axis from opencv to matplotlib coordinates
@@ -84,8 +85,8 @@ def plot_voxels(lookup_tables: list, frame: list, frame_number: int = 0):
             # PROBLEM: voxels are not drawn where they are supposed to be
             cv2.circle(frame[i][frame_number], (int(point[0]), int(point[1])), 2, (0, 0, 255), -1)
 
-        cv2.imshow(f"Camera {i+1}", frame[i][frame_number])
-        cv2.waitKey(0)
+        # cv2.imshow(f"Camera {i+1}", frame[i][frame_number])
+        # cv2.waitKey(0)
 
         frame[i][frame_number] = cv2.cvtColor(frame[i][frame_number], cv2.COLOR_BGR2RGB)  # Convert to RGB for matplotlib
         axs[i // 2, i % 2].imshow(frame[i][frame_number])
@@ -106,9 +107,8 @@ if __name__ == "__main__":
                   "./data/cam3/config.pickle", "./data/cam4/config.pickle"]
     fp_xml = "./data/checkerboard.xml"
 
-    lowerbound = -1500
     upperbound = 1500
-    stepsize = 300  # mm
+    stepsize = 30  # mm
     voxel_size = 115  # mm
 
     output_masks = []
@@ -128,7 +128,8 @@ if __name__ == "__main__":
         output_colour, output_mask = background_substraction(frames_background, frames_foreground)
 
         camera_params = load_pickle(fps_config[camera])
-        voxel_lookup_table = make_voxel_lookup_table(camera_params, lowerbound=lowerbound, upperbound=upperbound, stepsize=stepsize)
+
+        voxel_lookup_table = make_voxel_lookup_table(camera_params, upperbound=upperbound, stepsize=stepsize)
 
         lookup_tables.append(voxel_lookup_table)
         output_masks.append(output_mask)
@@ -150,7 +151,7 @@ if __name__ == "__main__":
     # Write voxels to pickle
     with open("./data/voxels.pickle", "wb") as fp:
         pickle.dump({"voxels": voxels, "voxel_size": voxel_size,
-                     "lowerbound": lowerbound, "upperbound": upperbound, "stepsize": stepsize}, fp)
+                     "upperbound": upperbound, "stepsize": stepsize}, fp)
 
     # Plot all voxels for each camera, add colour to each camera
     plot_voxels(lookup_tables, output_colours, frame_number=0)
