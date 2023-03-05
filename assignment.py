@@ -1,6 +1,7 @@
 import cv2
 import glm
 import numpy as np
+from tqdm import trange
 
 from data_processing import load_pickle
 
@@ -30,18 +31,37 @@ def set_voxel_positions(width, height, depth):
     data = []
     colours = []
     intersect = True  # Set to True to only keep voxels that are in all cameras
+    pixel_values = data_pickle["pixel_values"]
     if intersect:
         for frame in data_pickle["voxels"][:1]:  # TODO: Change to all frames
-            intersection = set.intersection(*map(set, frame))  # Find the intersection of all sets
+            for camera_number, camera in enumerate(frame):
+                camera_voxels = []
+                camera_colours = []
+                for voxel_number, voxel in enumerate(camera):
+                    voxel = [voxel[0], -voxel[2], voxel[1]]  # Swap the y and z axis, TODO: rotate y axis by 90 degrees
+                    voxel = tuple(v // data_pickle["stepsize"] * block_size for v in voxel)  # Scale the voxel by step size
 
-            for voxel in intersection:
-                voxel = [voxel[0], -voxel[2], voxel[1]]  # Swap the y and z axis, TODO: rotate y axis by 90 degrees
-                voxel = tuple(v // data_pickle["stepsize"] * block_size for v in voxel)  # Scale the voxel by step size
+                    pixel_value = pixel_values[camera_number][voxel_number]
+                    pixel_value = pixel_value / 255  # Scale the pixel value to 0-1
+                    # BGR to RGB
+                    pixel_value = [pixel_value[2], pixel_value[1], pixel_value[0]]
 
-                data.append(voxel)
-                colours.append([voxel[0] / width, voxel[2] / depth, voxel[1] / height])
+                    camera_voxels.append(voxel)
+                    camera_colours.append(pixel_value)
 
-            print(len(data))
+                data.append(camera_voxels)
+                colours.append(camera_colours)
+
+        # Only keep intersection of voxels that are in all four cameras
+        data_filtered = []
+        colours_filtered = []
+        for i in trange(len(data[0])):
+            if data[0][i] in data[1] and data[0][i] in data[2] and data[0][i] in data[3]:
+                data_filtered.append(data[0][i])
+                colours_filtered.append(colours[0][i])
+
+        return data_filtered, colours_filtered
+
     else:
         for frame in data_pickle["voxels"][:1]:  # TODO: Change to all frames
             for c, camera in enumerate(frame):
