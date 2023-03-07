@@ -1,3 +1,5 @@
+import pickle
+
 import cv2
 import glm
 import numpy as np
@@ -37,14 +39,14 @@ def set_voxel_positions(width, height, depth):
             for camera_number, camera in enumerate(frame):
                 camera_voxels = []
                 camera_colours = []
-                for voxel_number, voxel in enumerate(camera):
-                    voxel = [voxel[0], -voxel[2], voxel[1]]  # Swap the y and z axis, TODO: rotate y axis by 90 degrees
-                    voxel = tuple(v // data_pickle["stepsize"] * block_size for v in voxel)  # Scale the voxel by step size
+                for voxel_number, voxel in enumerate(camera):  # TODO: make use of numpy
+                    voxel = [voxel[0], -voxel[2], voxel[1]]  # Swap the y and z axis, rotate y axis by 90 degrees
+                    voxel = tuple(v / data_pickle["bounds"]["stepsize"] * block_size for v in voxel)  # Scale the voxel by step size
 
                     pixel_value = pixel_values[camera_number][voxel_number]
                     pixel_value = pixel_value / 255  # Scale the pixel value to 0-1
                     # BGR to RGB
-                    pixel_value = [pixel_value[2], pixel_value[1], pixel_value[0]]
+                    pixel_value = (pixel_value[2], pixel_value[1], pixel_value[0])
 
                     camera_voxels.append(voxel)
                     camera_colours.append(pixel_value)
@@ -53,12 +55,24 @@ def set_voxel_positions(width, height, depth):
                 colours.append(camera_colours)
 
         # Only keep intersection of voxels that are in all four cameras
-        data_filtered = []
-        colours_filtered = []
-        for i in trange(len(data[0])):
-            if data[0][i] in data[1] and data[0][i] in data[2] and data[0][i] in data[3]:
-                data_filtered.append(data[0][i])
-                colours_filtered.append(colours[0][i])
+        # data_filtered = []
+        # colours_filtered = []
+        # for i in trange(len(data[0])):
+        #     if data[0][i] in data[1] and data[0][i] in data[2] and data[0][i] in data[3]:
+        #         data_filtered.append(data[0][i])
+        #         colours_filtered.append(colours[0][i])
+
+        # Get the intersection of all voxels
+        data_filtered = data[0]
+        for i in trange(1, len(data)):
+            data_filtered = list(set(data_filtered).intersection(data[i]))
+
+        # Random colour
+        colours_filtered = np.random.rand(len(data_filtered), 3).tolist()
+
+        # Save the intersection to a pickle
+        with open("./data/voxels_intersection.pickle", "wb") as f:
+            pickle.dump({"voxels": data_filtered, "colours": colours_filtered}, f)
 
         return data_filtered, colours_filtered
 
@@ -66,8 +80,8 @@ def set_voxel_positions(width, height, depth):
         for frame in data_pickle["voxels"][:1]:  # TODO: Change to all frames
             for c, camera in enumerate(frame):
                 for voxel in camera:
-                    # voxel = [voxel[0], voxel[2], voxel[1]]  # Swap the y and z axis, TODO: rotate y axis by 90 degrees
-                    voxel = tuple(v // data_pickle["stepsize"] * block_size for v in voxel)  # Scale the voxel by step size
+                    voxel = [voxel[0], -voxel[2], voxel[1]]  # Swap the y and z axis, rotate y axis by 90 degrees
+                    voxel = tuple(v // data_pickle["bounds"]["stepsize"] * block_size for v in voxel)  # Scale the voxel by step size
 
                     data.append(voxel)
 
