@@ -4,7 +4,7 @@ import numpy as np
 from calibration import read_frames
 
 
-def background_substraction(frames_background, frames_foreground) -> list:
+def background_substraction(frames_background, frames_foreground, n_contours: int = 4, min_area: int = 3000) -> list:
     """Background substraction using OpenCV's MOG2 algorithm."""
     # Calculate the average frame
     background_substraction = cv2.createBackgroundSubtractorMOG2(history=100, varThreshold=16, detectShadows=True)
@@ -25,13 +25,16 @@ def background_substraction(frames_background, frames_foreground) -> list:
         # TODO: make sure gaps, e.g. between the legs, are not filled
         all_contours, _ = cv2.findContours(mask_foreground, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         if len(all_contours) > 0:  # If there are any contours
-            contour_max = max(all_contours, key=cv2.contourArea)
+            # Filter contours with area < min_area
+            contours_max = filter(lambda contour: cv2.contourArea(contour) > min_area, all_contours)
+            # Return the n largest contours
+            contours_max = sorted(contours_max, key=cv2.contourArea, reverse=True)[:n_contours]
             # Draw the contour
             # cv2.drawContours(frame, [contour_max], -1, (0, 255, 0), 2)
 
         # Only keep pixels within the contour
         mask_contour = np.zeros(mask_foreground.shape, dtype=np.uint8)
-        cv2.drawContours(mask_contour, [contour_max], -1, 255, -1)
+        cv2.drawContours(mask_contour, contours_max, -1, 255, -1)
         mask_foreground = cv2.bitwise_and(mask_foreground, mask_contour)
 
         # Apply erosion and dilation to remove noise
@@ -59,7 +62,7 @@ if __name__ == "__main__":
             print(f"Could not read frames from {fp_video}")
             continue
 
-        frames_foreground = read_frames(fps_foreground[c])
+        frames_foreground = read_frames(fps_foreground[c], stop_after=10*50)
         if frames_foreground is None:
             print(f"Could not read frames from {fps_foreground[c]}")
             continue
