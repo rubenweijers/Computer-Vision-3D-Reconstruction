@@ -10,7 +10,7 @@ from calibration import read_frames
 from data_processing import load_pickle
 
 
-def make_voxel_lookup_table(camera_params: dict, upperbound: int = 750, stepsize: int = 30) -> dict:
+def make_voxel_lookup_table(camera_params: dict, bounds: dict) -> dict:
     # Intrinsics
     intrinsics = camera_params["intrinsics"]
     camera_matrix = intrinsics["camera_matrix"]
@@ -22,9 +22,9 @@ def make_voxel_lookup_table(camera_params: dict, upperbound: int = 750, stepsize
     translation_vector = extrinsics["translation_vector"]
 
     voxel_lookup_table = {}
-    for x in trange(0, upperbound, stepsize, desc="Generating voxel lookup table"):
-        for y in range(0, upperbound, stepsize):
-            for z in range(-upperbound * 2, 0, stepsize):
+    for x in trange(bounds["x_lowerbound"], bounds["x_upperbound"], bounds["stepsize"], desc="Generating voxel lookup table"):
+        for y in range(bounds["y_lowerbound"], bounds["y_upperbound"], bounds["stepsize"]):
+            for z in range(bounds["z_lowerbound"], bounds["z_upperbound"], bounds["stepsize"]):
                 voxel = (x, y, z)  # Real-world coorsdinates
 
                 image_points, jac = cv2.projectPoints(voxel, rotation_vector, translation_vector,
@@ -54,7 +54,7 @@ def select_voxels(mask, voxel_lookup_table: dict, debug: bool = False) -> list:
             if mask[int(image_points[1]), int(image_points[0])] == 255:  # If the image point is masked, add voxel to list
                 image_points_all.append(image_points)
                 voxel_points.append(key)
-        except IndexError:
+        except Exception as e:
             # if image_points[0] < 0 or image_points[0] >= mask.shape[0] or image_points[1] < 0 or image_points[1] >= mask.shape[1]
 
             skipped += 1
@@ -98,7 +98,6 @@ def plot_voxels(lookup_tables: list, frame: list, frame_number: int = 0):
 
 
 if __name__ == "__main__":
-    # Calibration mode
     fps_background = ["./data/cam1/background.avi", "./data/cam2/background.avi",
                       "./data/cam3/background.avi", "./data/cam4/background.avi"]
     fps_foreground = ["./data/cam1/video.avi", "./data/cam2/video.avi",
@@ -107,9 +106,10 @@ if __name__ == "__main__":
                   "./data/cam3/config.pickle", "./data/cam4/config.pickle"]
     fp_xml = "./data/checkerboard.xml"
 
-    upperbound = 1500
-    stepsize = 30  # mm
-    voxel_size = 115  # mm
+    bounds = {"x_lowerbound": -1000, "x_upperbound": 4000,
+              "y_lowerbound": -1000, "y_upperbound": 3000,
+              "z_lowerbound": -2200, "z_upperbound": 0,
+              "stepsize": 30, "voxel_size": 115}  # mm
 
     output_masks = []
     output_colours = []
@@ -129,7 +129,7 @@ if __name__ == "__main__":
 
         camera_params = load_pickle(fps_config[camera])
 
-        voxel_lookup_table = make_voxel_lookup_table(camera_params, upperbound=upperbound, stepsize=stepsize)
+        voxel_lookup_table = make_voxel_lookup_table(camera_params, bounds)
 
         lookup_tables.append(voxel_lookup_table)
         output_masks.append(output_mask)
@@ -154,8 +154,7 @@ if __name__ == "__main__":
 
     # Write voxels to pickle
     with open("./data/voxels.pickle", "wb") as fp:
-        pickle.dump({"voxels": voxels, "voxel_size": voxel_size, "upperbound": upperbound, "stepsize": stepsize,
-                     "image_points": image_points_all, "pixel_values": pixel_values_all}, fp)
+        pickle.dump({"voxels": voxels, "bounds": bounds, "image_points": image_points_all, "pixel_values": pixel_values_all}, fp)
 
     # Plot all voxels for each camera, add colour to each camera
     plot_voxels(lookup_tables, output_colours, frame_number=0)
