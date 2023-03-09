@@ -109,7 +109,7 @@ if __name__ == "__main__":
     bounds = {"x_lowerbound": -1000, "x_upperbound": 4000,
               "y_lowerbound": -1000, "y_upperbound": 3000,
               "z_lowerbound": -2200, "z_upperbound": 0,
-              "stepsize": 115, "voxel_size": 115}  # mm
+              "stepsize": 30, "voxel_size": 115}  # mm
 
     output_masks = []
     output_colours = []
@@ -157,4 +157,4 @@ if __name__ == "__main__":
         pickle.dump({"voxels": voxels, "bounds": bounds, "image_points": image_points_all, "pixel_values": pixel_values_all}, fp)
 
     # Plot all voxels for each camera, add colour to each camera
-    plot_voxels(lookup_tables, output_colours, frame_number=0)
+    # plot_voxels(lookup_tables, output_colours, frame_number=0)
