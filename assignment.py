@@ -20,7 +20,7 @@ def generate_grid(width, depth):
 
 def set_voxel_positions(width, height, depth):
     # Load the voxel data from pickle
-    data = load_pickle("./data/voxels_intersection.pickle")
+    data = load_pickle("./data/voxels_clusters.pickle")
     voxels = data["voxels"]
     colours = data["colours"]
 
