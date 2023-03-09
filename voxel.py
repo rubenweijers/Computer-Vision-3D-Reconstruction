@@ -109,7 +109,7 @@ if __name__ == "__main__":
     bounds = {"x_lowerbound": -1000, "x_upperbound": 4000,
               "y_lowerbound": -1000, "y_upperbound": 3000,
               "z_lowerbound": -2200, "z_upperbound": 0,
-              "stepsize": 30, "voxel_size": 115}  # mm
+              "stepsize": 115, "voxel_size": 115}  # mm
 
     output_masks = []
     output_colours = []

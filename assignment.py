@@ -1,9 +1,6 @@
-import pickle
-
 import cv2
 import glm
 import numpy as np
-from tqdm import trange
 
 from data_processing import load_pickle
 
@@ -22,81 +19,12 @@ def generate_grid(width, depth):
 
 
 def set_voxel_positions(width, height, depth):
-    # Generates random voxel locations
-    # TODO: You need to calculate proper voxel arrays instead of random ones.
-
     # Load the voxel data from pickle
-    data_pickle = load_pickle("./data/voxels.pickle")
-    cam_colours = [[1.0, 0], [0, 1.0], [0, 0], [1.0, 1.0]]  # Only first two colours, last is set by height
-    show_cam_colours = False
+    data = load_pickle("./data/voxels_intersection.pickle")
+    voxels = data["voxels"]
+    colours = data["colours"]
 
-    data = []
-    colours = []
-    intersect = True  # Set to True to only keep voxels that are in all cameras
-    pixel_values = data_pickle["pixel_values"]
-    if intersect:
-        for frame in data_pickle["voxels"][:1]:  # TODO: Change to all frames
-            for camera_number, camera in enumerate(frame):
-                camera_voxels = []
-                camera_colours = []
-                for voxel_number, voxel in enumerate(camera):  # TODO: make use of numpy
-                    voxel = [voxel[0], -voxel[2], voxel[1]]  # Swap the y and z axis, rotate y axis by 90 degrees
-                    voxel = tuple(v / data_pickle["bounds"]["stepsize"] * block_size for v in voxel)  # Scale the voxel by step size
-
-                    pixel_value = pixel_values[camera_number][voxel_number]
-                    pixel_value = pixel_value / 255  # Scale the pixel value to 0-1
-                    # BGR to RGB
-                    pixel_value = (pixel_value[2], pixel_value[1], pixel_value[0])
-
-                    camera_voxels.append(voxel)
-                    camera_colours.append(pixel_value)
-
-                data.append(camera_voxels)
-                colours.append(camera_colours)
-
-        # Only keep intersection of voxels that are in all four cameras
-        # data_filtered = []
-        # colours_filtered = []
-        # for i in trange(len(data[0])):
-        #     if data[0][i] in data[1] and data[0][i] in data[2] and data[0][i] in data[3]:
-        #         data_filtered.append(data[0][i])
-        #         colours_filtered.append(colours[0][i])
-
-        # Get the intersection of all voxels
-        data_filtered = data[0]
-        for i in trange(1, len(data)):
-            data_filtered = list(set(data_filtered).intersection(data[i]))
-
-        # Random colour
-        colours_filtered = np.random.rand(len(data_filtered), 3).tolist()
-
-        # Save the intersection to a pickle
-        with open("./data/voxels_intersection.pickle", "wb") as f:
-            pickle.dump({"voxels": data_filtered, "colours": colours_filtered}, f)
-
-        return data_filtered, colours_filtered
-
-    else:
-        for frame in data_pickle["voxels"][:1]:  # TODO: Change to all frames
-            for c, camera in enumerate(frame):
-                for voxel in camera:
-                    voxel = [voxel[0], -voxel[2], voxel[1]]  # Swap the y and z axis, rotate y axis by 90 degrees
-                    voxel = tuple(v // data_pickle["bounds"]["stepsize"] * block_size for v in voxel)  # Scale the voxel by step size
-
-                    data.append(voxel)
-
-                    if show_cam_colours:  # For debugging, set colours to camera colours
-                        colours.append(cam_colours[c] + [voxel[1] / height])  # First 2 colours are set by camera, last is set by height
-                    else:
-                        colours.append([voxel[0] / width, voxel[2] / depth, voxel[1] / height])
-
-    # Only keep unique voxels
-    print(f"Number of voxels: {len(data)}")
-    idx = np.unique(data, axis=0, return_index=True)[1]  # Get the unique indices
-    data = np.array(data)[idx].tolist()
-    colours = np.array(colours)[idx].tolist()
-    print(f"Number of unique voxels: {len(data)}")
-    return data, colours
+    return voxels, colours
 
 
 def get_cam_positions():
