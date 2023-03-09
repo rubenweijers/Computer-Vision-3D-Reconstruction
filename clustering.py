@@ -25,26 +25,29 @@ if __name__ == "__main__":
     colours = {0: (0, 1, 1), 1: (1, 0, 1), 2: (1, 1, 0), 3: (0, 0, 0)}
 
     data = load_pickle("./data/voxels_intersection.pickle")
-    voxels = data["voxels"]
+    all_voxels = data["voxels"]
     bounds = data["bounds"]
 
-    voxels = np.array(voxels)
-    voxels = voxels * bounds["stepsize"]  # Scale the voxel by step size
-    voxels = voxels[:, [0, 2]]  # Select only X and Y, original order: X, Z, Y
-    # plot_clusters(voxels, bounds)
+    all_labels = []
+    for frame_voxels in all_voxels:
+        frame_voxels = np.array(frame_voxels)
+        frame_voxels = frame_voxels * bounds["stepsize"]  # Scale the voxel by step size
+        frame_voxels = frame_voxels[:, [0, 2]]  # Select only X and Y, original order: X, Z, Y
+        # plot_clusters(voxels, bounds)
 
-    # Cluster into four groups with sklearn
-    model = KMeans(n_clusters=4)
-    model.fit(voxels)
-    labels = model.predict(voxels)
+        # Cluster into four groups with sklearn
+        model = KMeans(n_clusters=4)
+        model.fit(frame_voxels)
+        labels = model.predict(frame_voxels)
 
-    # Convert labels to RGB
-    labels = [colours[label] for label in labels]
+        # Convert labels to RGB
+        labels = [colours[label] for label in labels]
+        all_labels.append(labels)
 
-    # Plot the clusters
-    plot_clusters(voxels, bounds, labels)
+        # Plot the clusters
+        plot_clusters(frame_voxels, bounds, labels)
 
     # Save to pickle
-    data = {"voxels": data["voxels"], "bounds": data["bounds"], "colours": labels}
+    data = {"voxels": data["voxels"], "bounds": data["bounds"], "colours": all_labels}
     with open("./data/voxels_clusters.pickle", "wb") as fp:
         pickle.dump(data, fp)

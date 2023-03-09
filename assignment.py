@@ -24,7 +24,10 @@ def set_voxel_positions(width, height, depth):
     voxels = data["voxels"]
     colours = data["colours"]
 
-    return voxels, colours
+    first_frame_voxels = voxels[0]
+    first_frame_colours = colours[0]
+
+    return first_frame_voxels, first_frame_colours
 
 
 def get_cam_positions():

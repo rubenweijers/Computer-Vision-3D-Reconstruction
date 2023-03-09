@@ -136,14 +136,22 @@ if __name__ == "__main__":
         all_tables.append(voxel_lookup_table)
 
     all_voxels = []  # List of voxels for each frame
-    for frame_n in range(n_frames)[:1]:  # TODO: only first few frames for debugging
+    all_pixel_values = []
+    for frame_n in range(n_frames):  # TODO: only first few frames for debugging
         voxels_frame = []
         pixel_values_frame = []
 
         for camera_masks, camera_table, camera_frames in zip(all_masks, all_tables, all_frames):
             voxels_camera, image_points_camera = select_voxels(camera_masks[frame_n], camera_table)
 
-            pixel_values = [camera_frames[frame_n][point[1], point[0]] for point in image_points_camera]
+            # Rewrite to numpy array
+            pixel_values = np.zeros((len(image_points_camera), 3))
+            cf = camera_frames[frame_n]
+            points = np.array(image_points_camera)
+            points = points[:, 1], points[:, 0]
+            pixel_values = cf[points]
+
+            # pixel_values = [camera_frames[frame_n][point[1], point[0]] for point in image_points_camera]
 
             voxels_frame.append(voxels_camera)
             pixel_values_frame.append(pixel_values)
@@ -151,10 +159,11 @@ if __name__ == "__main__":
         print(f"Number of voxels for each camera: {[len(p) for p in voxels_frame]}")
 
         all_voxels.append(voxels_frame)
+        all_pixel_values.append(pixel_values_frame)
 
     # Write voxels to pickle
     with open("./data/voxels.pickle", "wb") as fp:
-        pickle.dump({"voxels": all_voxels, "bounds": bounds, "pixel_values": pixel_values_frame}, fp)
+        pickle.dump({"voxels": all_voxels, "pixel_values": all_pixel_values, "bounds": bounds}, fp)
 
     # Plot all voxels for each camera, add colour to each camera
     # plot_voxels(lookup_tables, output_colours, frame_number=0)
