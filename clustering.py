@@ -29,6 +29,8 @@ if __name__ == "__main__":
     bounds = data["bounds"]
 
     all_labels = []
+    cluster_centers = "k-means++"  # Use the default k-means++ to initialise the cluster centers
+    all_cluster_centers = []
     for frame_voxels in all_voxels:
         frame_voxels = np.array(frame_voxels)
         frame_voxels = frame_voxels * bounds["stepsize"]  # Scale the voxel by step size
@@ -36,9 +38,12 @@ if __name__ == "__main__":
         # plot_clusters(voxels, bounds)
 
         # Cluster into four groups with sklearn
-        model = KMeans(n_clusters=4)
+        model = KMeans(n_clusters=4, init=cluster_centers, n_init=1)
         model.fit(frame_voxels)
         labels = model.predict(frame_voxels)
+
+        cluster_centers = model.cluster_centers_  # Use the cluster centers as the initialisation for the next frame
+        all_cluster_centers.append(cluster_centers)
 
         # Convert labels to RGB
         labels = [colours[label] for label in labels]
@@ -48,6 +53,6 @@ if __name__ == "__main__":
         plot_clusters(frame_voxels, bounds, labels)
 
     # Save to pickle
-    data = {"voxels": data["voxels"], "bounds": data["bounds"], "colours": all_labels}
+    data = {"voxels": data["voxels"], "bounds": data["bounds"], "colours": all_labels, "cluster_centers": all_cluster_centers}
     with open("./data/voxels_clusters.pickle", "wb") as fp:
         pickle.dump(data, fp)
