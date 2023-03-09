@@ -112,8 +112,8 @@ if __name__ == "__main__":
               "z_lowerbound": -2200, "z_upperbound": 0,
               "stepsize": 30, "voxel_size": 115}  # mm
 
-    n_frames = 5  # Number of frames in total to load
-    every_nth = 50  # Only load every nth frame
+    n_frames = 20  # Number of frames in total to load
+    every_nth = 25  # Only load every nth frame
 
     all_masks = []
     all_frames = []

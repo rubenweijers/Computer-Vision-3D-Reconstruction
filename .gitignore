@@ -16,6 +16,8 @@ data/*
 !data/cam3/camera_params.pickle
 !data/cam4/camera_params.pickle
 
+!data/voxels_clusters.pickle
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
