@@ -31,7 +31,7 @@ def make_voxel_lookup_table(camera_params: dict, bounds: dict) -> dict:
                                           camera_matrix, distortion_coefficients)  # 2D image coordinates
     image_points = image_points.reshape(-1, 2).astype(np.int32)
 
-    # Threshold all points that are out of bounds
+    # Threshold all points that are out of bounds TODO: add upper bounds to remove try-except in select_voxels
     idx = np.where((image_points[:, 0] < 0) | (image_points[:, 1] < 0))
     image_points = np.delete(image_points, idx, axis=0)
     voxel_coords = np.delete(voxel_coords, idx, axis=0)
@@ -47,13 +47,6 @@ def make_voxel_lookup_table(camera_params: dict, bounds: dict) -> dict:
 
 def select_voxels(mask, voxel_lookup_table: dict) -> list:
     """Filters voxels that are visible in the image and are not masked out."""
-    # if debug:  # Get max and min of image points to find outliers
-    min_x = round(min([value[0] for value in voxel_lookup_table.values()]), 2)
-    max_x = round(max([value[0] for value in voxel_lookup_table.values()]), 2)
-    min_y = round(min([value[1] for value in voxel_lookup_table.values()]), 2)
-    max_y = round(max([value[1] for value in voxel_lookup_table.values()]), 2)
-    print(f"({min_x=}, {max_x=}, {min_y=}, {max_y=})")
-
     skipped = 0
     voxel_points = []
     image_points_all = []
