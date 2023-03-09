@@ -15,23 +15,20 @@ def intersect_voxels():
     data = []
     colours = []
     for frame in data_pickle["voxels"][:1]:  # TODO: Change to all frames
-        for camera_number, camera in enumerate(frame):
-            camera_voxels = []
-            camera_colours = []
-            for voxel_number, voxel in enumerate(camera):  # TODO: make use of numpy
-                voxel = [voxel[0], -voxel[2], voxel[1]]  # Swap the y and z axis, rotate y axis by 90 degrees
-                voxel = tuple(v / data_pickle["bounds"]["stepsize"] * block_size for v in voxel)  # Scale the voxel by step size
+        for camera_number, voxels in enumerate(frame):
+            voxels = np.array(voxels)
+            voxels = voxels[:, [0, 2, 1]]  # Swap the y and z axis
+            voxels[:, 1] = -voxels[:, 1]  # Rotate y axis by 90 degrees
+            voxels = voxels * block_size / data_pickle["bounds"]["stepsize"]  # Scale the voxel by step size
+            voxels = voxels.round(0).astype(int)  # Round to nearest integer instead of floor
+            voxels = list(map(tuple, voxels))  # Convert to list of tuples, in an efficient way
 
-                pixel_value = pixel_values[camera_number][voxel_number]
-                pixel_value = pixel_value / 255  # Scale the pixel value to 0-1
-                # BGR to RGB
-                pixel_value = (pixel_value[2], pixel_value[1], pixel_value[0])
+            voxel_colours = np.array(pixel_values[camera_number]) / 255  # Scale the pixel value to 0-1
+            voxel_colours = voxel_colours[:, [2, 1, 0]]  # BGR to RGB
+            voxel_colours = list(map(tuple, voxel_colours))  # Convert to list of tuples, in an efficient way
 
-                camera_voxels.append(voxel)
-                camera_colours.append(pixel_value)
-
-            data.append(camera_voxels)
-            colours.append(camera_colours)
+            data.append(voxels)
+            colours.append(voxel_colours)
 
     # Only keep intersection of voxels that are in all four cameras
     # data_filtered = []
