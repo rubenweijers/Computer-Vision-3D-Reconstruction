@@ -1,9 +1,10 @@
 import pickle
+from itertools import product
 
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
-from tqdm import tqdm, trange
+from tqdm import tqdm
 
 from background import background_substraction
 from calibration import read_frames
@@ -21,15 +22,20 @@ def make_voxel_lookup_table(camera_params: dict, bounds: dict) -> dict:
     rotation_vector = extrinsics["rotation_vector"]
     translation_vector = extrinsics["translation_vector"]
 
-    voxel_lookup_table = {}
-    for x in trange(bounds["x_lowerbound"], bounds["x_upperbound"], bounds["stepsize"], desc="Generating voxel lookup table"):
-        for y in range(bounds["y_lowerbound"], bounds["y_upperbound"], bounds["stepsize"]):
-            for z in range(bounds["z_lowerbound"], bounds["z_upperbound"], bounds["stepsize"]):
-                voxel = (x, y, z)  # Real-world coorsdinates
+    voxel_coords = product(range(bounds["x_lowerbound"], bounds["x_upperbound"], bounds["stepsize"]),
+                           range(bounds["y_lowerbound"], bounds["y_upperbound"], bounds["stepsize"]),
+                           range(bounds["z_lowerbound"], bounds["z_upperbound"], bounds["stepsize"]))
+    voxel_coords = np.array(list(voxel_coords), dtype=np.float32)  # 3D real world coordinates
 
-                image_points, jac = cv2.projectPoints(voxel, rotation_vector, translation_vector,
-                                                      camera_matrix, distortion_coefficients)  # 2D image coordinates
-                voxel_lookup_table[voxel] = image_points.flatten()
+    image_points, jac = cv2.projectPoints(voxel_coords, rotation_vector, translation_vector,
+                                          camera_matrix, distortion_coefficients)  # 2D image coordinates
+    image_points = image_points.reshape(-1, 2)  # Flatten array
+
+    voxel_coords = [tuple(voxel_coord) for voxel_coord in voxel_coords]  # To list of tuples
+    image_points = [tuple(image_point) for image_point in image_points]
+
+    # Convert to dict
+    voxel_lookup_table = {voxel: image_point for voxel, image_point in zip(voxel_coords, image_points)}
 
     return voxel_lookup_table
 
