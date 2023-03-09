@@ -5,6 +5,7 @@ import numpy as np
 from data_processing import load_pickle
 
 block_size = 1.0
+frame_n = 0
 
 
 def generate_grid(width, depth):
@@ -19,15 +20,19 @@ def generate_grid(width, depth):
 
 
 def set_voxel_positions(width, height, depth):
+    global frame_n
     # Load the voxel data from pickle
     data = load_pickle("./data/voxels_clusters.pickle")
     voxels = data["voxels"]
     colours = data["colours"]
 
-    first_frame_voxels = voxels[0]
-    first_frame_colours = colours[0]
+    frame_voxels = voxels[frame_n]
+    frame_colours = colours[frame_n]
 
-    return first_frame_voxels, first_frame_colours
+    # Reset to frame 0 when the last frame is reached
+    frame_n = (frame_n + 1) % len(voxels)
+
+    return frame_voxels, frame_colours
 
 
 def get_cam_positions():
