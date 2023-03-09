@@ -4,7 +4,8 @@ from itertools import product
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
-from tqdm import tqdm
+from tqdm import trange
+from tqdm.contrib import tzip
 
 from background import background_substraction
 from calibration import read_frames
@@ -45,12 +46,12 @@ def make_voxel_lookup_table(camera_params: dict, bounds: dict) -> dict:
     return voxel_lookup_table
 
 
-def select_voxels(mask, voxel_lookup_table: dict) -> list:
+def select_voxels(mask, voxel_lookup_table: dict, debug: bool = False) -> list:
     """Filters voxels that are visible in the image and are not masked out."""
     skipped = 0
     voxel_points = []
     image_points_all = []
-    for key, value in tqdm(voxel_lookup_table.items()):
+    for key, value in voxel_lookup_table.items():
         image_points = value
 
         try:
@@ -61,7 +62,7 @@ def select_voxels(mask, voxel_lookup_table: dict) -> list:
             skipped += 1
             continue
 
-    if skipped > 0:
+    if debug:
         print(f"{skipped} voxels out of bounds ({skipped / (len(voxel_lookup_table) / 100):.2f}%)")
 
     return voxel_points, image_points_all
@@ -110,18 +111,20 @@ if __name__ == "__main__":
               "y_lowerbound": -1000, "y_upperbound": 3000,
               "z_lowerbound": -2200, "z_upperbound": 0,
               "stepsize": 30, "voxel_size": 115}  # mm
-    n_frames = 5
+
+    n_frames = 5  # Number of frames in total to load
+    every_nth = 50  # Only load every nth frame
 
     all_masks = []
     all_frames = []
     all_tables = []
-    for fp_back, fp_fore, fp_config in zip(fps_background, fps_foreground, fps_config):
-        frames_background = read_frames(fp_back, stop_after=n_frames)
+    for fp_back, fp_fore, fp_config in tzip(fps_background, fps_foreground, fps_config, desc="Loading camera data", unit="camera"):
+        frames_background = read_frames(fp_back, stop_after=n_frames, nth=every_nth)
         if frames_background is None:
             print(f"Could not read frames from {fp_back}")
             continue
 
-        frames_foreground = read_frames(fp_fore, stop_after=n_frames)
+        frames_foreground = read_frames(fp_fore, stop_after=n_frames, nth=every_nth)
         if frames_foreground is None:
             print(f"Could not read frames from {fp_fore}")
             continue
@@ -137,7 +140,7 @@ if __name__ == "__main__":
 
     all_voxels = []  # List of voxels for each frame
     all_pixel_values = []
-    for frame_n in range(n_frames):  # TODO: only first few frames for debugging
+    for frame_n in trange(n_frames, desc="Processing frames", unit="frame"):
         voxels_frame = []
         pixel_values_frame = []
 
@@ -155,8 +158,6 @@ if __name__ == "__main__":
 
             voxels_frame.append(voxels_camera)
             pixel_values_frame.append(pixel_values)
-
-        print(f"Number of voxels for each camera: {[len(p) for p in voxels_frame]}")
 
         all_voxels.append(voxels_frame)
         all_pixel_values.append(pixel_values_frame)
