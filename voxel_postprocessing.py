@@ -7,23 +7,19 @@ from assignment import block_size
 from data_processing import load_pickle
 
 
-def intersect_voxels(colourise: bool = False):
+def intersect_voxels(frame_voxels, pixel_values, stepsize: int, colourise: bool = False):
     """Intersect the voxels from all cameras and return the intersection.
 
     Optionally colourise the voxels based on the pixel values or randomise the colours.
     """
-    # Load the voxel data from pickle
-    data_pickle = load_pickle("./data/voxels.pickle")
-    pixel_values = data_pickle["pixel_values"]
-
     all_voxels = []
     all_colours = []
-    for frame in data_pickle["voxels"][:1]:  # TODO: Change to all frames
+    for frame in frame_voxels:  # TODO: Change to all frames
         for camera_number, camera_voxels in enumerate(tqdm(frame, desc="Processing camera")):
             camera_voxels = np.array(camera_voxels)
             camera_voxels = camera_voxels[:, [0, 2, 1]]  # Swap the y and z axis
             camera_voxels[:, 1] = -camera_voxels[:, 1]  # Rotate y axis by 90 degrees
-            camera_voxels = camera_voxels * block_size / data_pickle["bounds"]["stepsize"]  # Scale the voxel by step size
+            camera_voxels = camera_voxels * block_size / stepsize  # Scale the voxel by step size
             camera_voxels = camera_voxels.round(0).astype(int)  # Round to nearest integer instead of floor
             camera_voxels = list(map(tuple, camera_voxels))  # Convert to list of tuples, in an efficient way
 
@@ -52,8 +48,16 @@ def intersect_voxels(colourise: bool = False):
 
 
 if __name__ == "__main__":
-    voxels, colours = intersect_voxels(colourise=False)  # False is faster for debugging
+    # Load the voxel data from pickle
+    data_pickle = load_pickle("./data/voxels.pickle")
+
+    voxel_frames = data_pickle["voxels"][:1]
+    pixel_values = data_pickle["pixel_values"]
+    stepsize = data_pickle["bounds"]["stepsize"]
+    bounds = data_pickle["bounds"]
+
+    voxels, colours = intersect_voxels(voxel_frames, pixel_values, stepsize, colourise=False)  # False is faster for debugging
 
     # Save the intersection to a pickle
     with open("./data/voxels_intersection.pickle", "wb") as f:
-        pickle.dump({"voxels": voxels, "colours": colours}, f)
+        pickle.dump({"voxels": voxels, "colours": colours, "bounds": bounds}, f)
