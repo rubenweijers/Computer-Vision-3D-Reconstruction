@@ -110,51 +110,51 @@ if __name__ == "__main__":
               "y_lowerbound": -1000, "y_upperbound": 3000,
               "z_lowerbound": -2200, "z_upperbound": 0,
               "stepsize": 30, "voxel_size": 115}  # mm
+    n_frames = 5
 
-    output_masks = []
-    output_colours = []
-    lookup_tables = []
-    for camera, fp_video in enumerate(fps_background):
-        frames_background = read_frames(fp_video, stop_after=2)
+    all_masks = []
+    all_frames = []
+    all_tables = []
+    for fp_back, fp_fore, fp_config in zip(fps_background, fps_foreground, fps_config):
+        frames_background = read_frames(fp_back, stop_after=n_frames)
         if frames_background is None:
-            print(f"Could not read frames from {fp_video}")
+            print(f"Could not read frames from {fp_back}")
             continue
 
-        frames_foreground = read_frames(fps_foreground[camera], stop_after=2)
+        frames_foreground = read_frames(fp_fore, stop_after=n_frames)
         if frames_foreground is None:
-            print(f"Could not read frames from {fps_foreground[camera]}")
+            print(f"Could not read frames from {fp_fore}")
             continue
 
-        output_colour, output_mask = background_substraction(frames_background, frames_foreground)
+        masks_coloured, masks = background_substraction(frames_background, frames_foreground)
 
-        camera_params = load_pickle(fps_config[camera])
-
+        camera_params = load_pickle(fp_config)
         voxel_lookup_table = make_voxel_lookup_table(camera_params, bounds)
 
-        lookup_tables.append(voxel_lookup_table)
-        output_masks.append(output_mask)
-        output_colours.append(frames_foreground)
+        all_frames.append(frames_foreground)
+        all_masks.append(masks)
+        all_tables.append(voxel_lookup_table)
 
-    voxels = []
-    for frame_n in range(len(output_masks[0]))[:1]:  # TODO: only first two frames for debugging
-        voxel_points = []
-        image_points_all = []
-        pixel_values_all = []
-        for camera, mask in enumerate(output_masks):
-            cam_voxels, image_points = select_voxels(mask[frame_n], lookup_tables[camera])
-            voxel_points.append(cam_voxels)
-            # Get pixel value of all image points
-            pixel_values = [output_colours[camera][frame_n][int(point[1]), int(point[0])] for point in image_points]
-            pixel_values_all.append(pixel_values)
-            image_points_all.append(image_points)
+    all_voxels = []  # List of voxels for each frame
+    for frame_n in range(n_frames)[:1]:  # TODO: only first few frames for debugging
+        voxels_frame = []
+        pixel_values_frame = []
 
-        print(f"Number of voxels for each camera: {[len(p) for p in voxel_points]}")
+        for camera_masks, camera_table, camera_frames in zip(all_masks, all_tables, all_frames):
+            voxels_camera, image_points_camera = select_voxels(camera_masks[frame_n], camera_table)
 
-        voxels.append(voxel_points)
+            pixel_values = [camera_frames[frame_n][point[1], point[0]] for point in image_points_camera]
+
+            voxels_frame.append(voxels_camera)
+            pixel_values_frame.append(pixel_values)
+
+        print(f"Number of voxels for each camera: {[len(p) for p in voxels_frame]}")
+
+        all_voxels.append(voxels_frame)
 
     # Write voxels to pickle
     with open("./data/voxels.pickle", "wb") as fp:
-        pickle.dump({"voxels": voxels, "bounds": bounds, "image_points": image_points_all, "pixel_values": pixel_values_all}, fp)
+        pickle.dump({"voxels": all_voxels, "bounds": bounds, "pixel_values": pixel_values_frame}, fp)
 
     # Plot all voxels for each camera, add colour to each camera
     # plot_voxels(lookup_tables, output_colours, frame_number=0)
