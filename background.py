@@ -1,8 +1,81 @@
 import cv2
 import numpy as np
+from PIL import Image
+import matplotlib.pyplot as plt
+from sklearn.cluster import KMeans
+from collections import Counter
 
 from calibration import read_frames
 
+# Calculate the most common RGB value for each camera
+def get_most_common_rgb_value(fp_video: str) -> tuple:
+    """Calculate the most common RGB value for each camera."""
+    frames = read_frames(fp_video)
+    if frames is None:
+        print(f"Could not read frames from {fp_video}")
+        return None
+
+    # Calculate the average frame
+    avg_frame = np.mean(frames, axis=0).astype(np.uint8)  # TODO: Change to GMM
+    print(f"Average frame shape: {avg_frame.shape}")
+
+    # Show the average frame
+    cv2.imshow("", avg_frame)
+    cv2.waitKey(0)
+
+    # Convert the average frame to RGB
+    avg_frame = cv2.cvtColor(avg_frame, cv2.COLOR_BGR2RGB)
+    # Flatten the average frame
+    avg_frame = avg_frame.reshape((avg_frame.shape[0] * avg_frame.shape[1], 3))
+    # Cluster the pixels
+    clt = KMeans(n_clusters=1)
+    clt.fit(avg_frame)
+    # Count the most common pixel value
+    count = Counter(clt.labels_)
+    # Get the most common pixel value
+    pixelvalue = clt.cluster_centers_[count.most_common(1)[0][0]].astype(int)
+    return pixelvalue
+
+# Get the most common RGB value for each camera
+most_common_rgb_value_cam1 = get_most_common_rgb_value("./data/cam1/background.avi")
+most_common_rgb_value_cam2 = get_most_common_rgb_value("./data/cam2/background.avi")
+most_common_rgb_value_cam3 = get_most_common_rgb_value("./data/cam3/background.avi")
+most_common_rgb_value_cam4 = get_most_common_rgb_value("./data/cam4/background.avi")
+
+# Find similar RGB values to the most common RGB values of the four cameras
+def find_similar_rgb_values(most_common_rgb_value: tuple, threshold: int = 5) -> list:
+    """Find similar RGB values to the most common RGB value of the four cameras."""
+    similar_rgb_values = []
+    for i in range(256):
+        for j in range(256):
+            for k in range(256):
+                if (abs(i - most_common_rgb_value[0]) < threshold and
+                    abs(j - most_common_rgb_value[1]) < threshold and
+                    abs(k - most_common_rgb_value[2]) < threshold):
+                    similar_rgb_values.append([i, j, k])
+    return similar_rgb_values
+
+
+# Find the most similar RGB values for camera 1
+similar_rgb_cam1 = find_similar_rgb_values(most_common_rgb_value_cam1)
+similar_rgb_cam2 = find_similar_rgb_values(most_common_rgb_value_cam2)
+similar_rgb_cam3 = find_similar_rgb_values(most_common_rgb_value_cam3)
+similar_rgb_cam4 = find_similar_rgb_values(most_common_rgb_value_cam4)
+
+# Plot the most common RGB value for each camera
+def plot_most_common_rgb_value(most_common_rgb_value: tuple, similar_rgb_values: list):
+    """Plot the most common RGB value for each camera."""
+    # Plot the most common RGB value
+    plt.figure()
+    plt.imshow(np.array(most_common_rgb_value).reshape(1, 1, 3))
+    plt.title("Most common RGB value")
+    plt.show()
+
+    # Plot the similar RGB values
+    plt.figure()
+    plt.imshow(np.array(similar_rgb_values).reshape(len(similar_rgb_values), 1, 3))
+    plt.title("Similar RGB values")
+    plt.show()
 
 def background_substraction(frames_background, frames_foreground, n_contours: int = 4, min_area: int = 3000) -> list:
     """Background substraction using OpenCV's MOG2 algorithm."""
@@ -39,12 +112,26 @@ def background_substraction(frames_background, frames_foreground, n_contours: in
 
         # Apply erosion and dilation to remove noise
         kernel = np.ones((3, 3), np.uint8)
+        kernelbig = np.ones((5, 5), np.uint8)
         mask_foreground = cv2.dilate(mask_foreground, kernel, iterations=1)
         mask_foreground = cv2.erode(mask_foreground, kernel, iterations=1)
+        mask_foreground = cv2.erode(mask_foreground, kernelbig, iterations=1)
 
         frame = cv2.bitwise_and(frame, frame, mask=mask_foreground)
 
+        # Remove the most common RGB value from the frame
+        frame[frame == most_common_rgb_value_cam1] = 0
+        frame[frame == most_common_rgb_value_cam2] = 0
+        frame[frame == most_common_rgb_value_cam3] = 0
+        frame[frame == most_common_rgb_value_cam4] = 0
+
+        # Remove similar RGB values from the frame
+        # for similar_rgb_value in similar_rgb_cam1:
+        #     frame[frame == similar_rgb_value] = 0
+    
+
         output_colour.append(frame)
+
         output_mask.append(mask_foreground)
 
     return output_colour, output_mask
@@ -66,6 +153,7 @@ if __name__ == "__main__":
         if frames_foreground is None:
             print(f"Could not read frames from {fps_foreground[c]}")
             continue
+
 
         avg_frame = np.mean(frames_background, axis=0).astype(np.uint8)  # TODO: Change to GMM
         print(f"Average frame shape: {avg_frame.shape}")
