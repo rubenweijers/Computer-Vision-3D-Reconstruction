@@ -6,6 +6,11 @@ from data_processing import load_pickle
 
 block_size = 1.0
 frame_n = 0
+data = load_pickle("./data/voxels_intersection.pickle")  # Load data only once
+voxels = data["voxels"]
+colours = data["colours"]
+bounds = data["bounds"]
+torso_only = True
 
 
 def generate_grid(width, depth):
@@ -21,16 +26,21 @@ def generate_grid(width, depth):
 
 def set_voxel_positions(width, height, depth):
     global frame_n
-    # Load the voxel data from pickle
-    data = load_pickle("./data/voxels_clusters.pickle")
-    voxels = data["voxels"]
-    colours = data["colours"]
 
     frame_voxels = voxels[frame_n]
     frame_colours = colours[frame_n]
+    frame_n = (frame_n + 1) % len(voxels)  # Reset to frame 0 when the last frame is reached
 
-    # Reset to frame 0 when the last frame is reached
-    frame_n = (frame_n + 1) % len(voxels)
+    if torso_only:  # Only select voxels between 85 and 150 cm
+        hip_height = 850  # mm
+        shoulder_height = 1500  # mm
+
+        frame_voxels = np.array(frame_voxels) * bounds["stepsize"]  # Convert back to mm
+        idx = np.where((frame_voxels[:, 1] >= hip_height) & (frame_voxels[:, 1] <= shoulder_height))  # Order: x, z, y
+
+        frame_voxels = frame_voxels[idx] / bounds["stepsize"]  # Select voxels between 85 and 150 cm
+        frame_voxels = frame_voxels.round().astype(int).tolist()  # Round to nearest integer and convert to list
+        frame_colours = np.array(frame_colours)[idx].tolist()  # Index colours with the same indices as the voxels
 
     return frame_voxels, frame_colours
 
