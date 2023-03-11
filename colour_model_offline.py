@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+from tqdm import tqdm
 
 from data_processing import load_pickle
 
@@ -9,13 +10,16 @@ if __name__ == "__main__":
     colour_map = {0: [0, 1, 1], 1: [1, 0, 1], 2: [1, 1, 0], 3: [0, 0, 0]}
     n_gmm_clusters = 3  # Number of colours per person for the colour model
     use_lab_colour_space = False  # Convert to LAB colour space
+    hip_height = 850  # mm
+    shoulder_height = 1500  # mm
 
     voxels = data_voxels["voxels"]
     colours = data_voxels["colours"]
+    bounds = data_voxels["bounds"]
     clusters = data_clusters["colours"]
 
     # Select first frame and cluster
-    frame_voxels = np.array(voxels[0]) * 30 / 10  # Convert back to mm, then to cm
+    frame_voxels = np.array(voxels[0]) * bounds["stepsize"]  # Convert back to mm
     frame_colours = np.array(colours[0])
     frame_clusters = np.array(clusters[0])
 
@@ -25,9 +29,9 @@ if __name__ == "__main__":
     print("Clusters shape: ", frame_clusters.shape)
 
     colour_models = []
-    for cluster in colour_map:
+    for cluster in tqdm(colour_map):
         # All where z axis is between 70-150 centimeters, order is x, z, y
-        idx_z = np.where((frame_voxels[:, 1] >= 70) & (frame_voxels[:, 1] <= 150))
+        idx_z = np.where((frame_voxels[:, 1] >= hip_height) & (frame_voxels[:, 1] <= shoulder_height))
         idx = np.where((frame_clusters == colour_map[cluster]).all(axis=1))  # All idx from the same cluster
         colour_subset = frame_colours[np.intersect1d(idx, idx_z)]  # Filter based on both conditions
 
@@ -46,21 +50,26 @@ if __name__ == "__main__":
         colour_models.append(colour_model)
 
     # Calculate distance between means of each colour model
-    for i in range(len(colour_models)):
-        for j in range(len(colour_models)):
-            if i != j:
-                print(f"Distance between colour {i} and colour {j}: ", np.linalg.norm(colour_models[i] - colour_models[j]).round(2))
+    for colour in range(len(colour_models)):
+        for person in range(len(colour_models)):
+            if colour != person:
+                print(f"Distance between colour {colour} and colour {person}: ",
+                      np.linalg.norm(colour_models[colour] - colour_models[person]).round(2))
 
     # Convert to numpy array
     colour_models = np.array(colour_models)
     print(colour_models.shape)
-    print(colour_models)
+    # print(colour_models)
 
     # Create image
-    img = np.zeros((300, 600, 3), dtype=np.float32)
-    for i in range(n_gmm_clusters):
-        for j in range(len(colour_map)):
-            img[i * 100:(i + 1) * 100, j * 150:(j + 1) * 150] = colour_models[j][i]
+    height = 300
+    width = 600
+    img = np.zeros((height, width, 3), dtype=np.float32)
+    for colour in range(n_gmm_clusters):
+        for person in range(len(colour_map)):
+            every_h = int(height / n_gmm_clusters)
+            every_w = int(width / len(colour_map))
+            img[colour * every_h:(colour + 1) * every_h, person * every_w:(person + 1) * every_w] = colour_models[person][colour]
 
     # Convert to BGR
     if use_lab_colour_space:
