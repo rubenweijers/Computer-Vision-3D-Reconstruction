@@ -35,7 +35,7 @@ if __name__ == "__main__":
         frame_voxels = np.array(frame_voxels)
         frame_voxels = frame_voxels * bounds["stepsize"]  # Scale the voxel by step size
         frame_voxels = frame_voxels[:, [0, 2]]  # Select only X and Y, original order: X, Z, Y
-        # plot_clusters(voxels, bounds)
+        # plot_clusters(frame_voxels, bounds)
 
         # Cluster into four groups with sklearn
         model = KMeans(n_clusters=4, init=cluster_centers, n_init=1)
