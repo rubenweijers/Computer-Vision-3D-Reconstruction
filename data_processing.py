@@ -12,6 +12,12 @@ def load_pickle(fp):
     return data
 
 
+def save_pickle(fp, data):
+    """Save a pickle file"""
+    with open(fp, "wb") as f:
+        pickle.dump(data, f)
+
+
 class NumpyEncoder(json.JSONEncoder):
     """Special json encoder for numpy types
 
