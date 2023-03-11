@@ -50,7 +50,7 @@ if __name__ == "__main__":
         all_labels.append(labels)
 
         # Plot the clusters
-        plot_clusters(frame_voxels, bounds, labels)
+        # plot_clusters(frame_voxels, bounds, labels)
 
     # Save to pickle
     data = {"voxels": data["voxels"], "bounds": data["bounds"], "colours": all_labels, "cluster_centers": all_cluster_centers}
