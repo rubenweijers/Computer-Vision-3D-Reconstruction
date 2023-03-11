@@ -8,7 +8,7 @@ if __name__ == "__main__":
     data_voxels = load_pickle("./data/voxels_intersection.pickle")
     data_clusters = load_pickle("./data/voxels_clusters.pickle")
     colour_map = {0: [0, 1, 1], 1: [1, 0, 1], 2: [1, 1, 0], 3: [0, 0, 0]}
-    n_gmm_clusters = 3  # Number of colours per person for the colour model
+    n_gmm_clusters = 4  # Number of colours per person for the colour model
     use_lab_colour_space = False  # Convert to LAB colour space
     hip_height = 850  # mm
     shoulder_height = 1500  # mm
@@ -50,11 +50,12 @@ if __name__ == "__main__":
         colour_models.append(colour_model)
 
     # Calculate distance between means of each colour model
-    for colour in range(len(colour_models)):
-        for person in range(len(colour_models)):
-            if colour != person:
-                print(f"Distance between colour {colour} and colour {person}: ",
-                      np.linalg.norm(colour_models[colour] - colour_models[person]).round(2))
+    distance = np.zeros((len(colour_map), len(colour_map)))
+    for i in range(len(colour_map)):
+        for j in range(len(colour_map)):
+            distance[i][j] = np.linalg.norm(colour_models[i] - colour_models[j])
+    distance = np.tril(distance)  # Remove upper triangle, since duplicate
+    print(distance.round(2))
 
     # Convert to numpy array
     colour_models = np.array(colour_models)
@@ -64,11 +65,11 @@ if __name__ == "__main__":
     # Create image
     height = 300
     width = 600
+    every_h = int(height / n_gmm_clusters)
+    every_w = int(width / len(colour_map))
     img = np.zeros((height, width, 3), dtype=np.float32)
     for colour in range(n_gmm_clusters):
         for person in range(len(colour_map)):
-            every_h = int(height / n_gmm_clusters)
-            every_w = int(width / len(colour_map))
             img[colour * every_h:(colour + 1) * every_h, person * every_w:(person + 1) * every_w] = colour_models[person][colour]
 
     # Convert to BGR
