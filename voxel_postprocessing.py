@@ -60,7 +60,7 @@ if __name__ == "__main__":
     voxels_postprocessed = []
     colours_postprocessed = []
     for voxels_frame, pixel_values_frame in tzip(all_voxels, all_pixel_values, desc="Postprocessing frames"):
-        voxels, colours = intersect_voxels(voxels_frame, pixel_values_frame, stepsize, colourise=False)  # False is faster for debugging
+        voxels, colours = intersect_voxels(voxels_frame, pixel_values_frame, stepsize, colourise=True)  # False is faster for debugging
 
         voxels_postprocessed.append(voxels)
         colours_postprocessed.append(colours)

@@ -6,11 +6,22 @@ from data_processing import load_pickle
 
 block_size = 1.0
 frame_n = 0
-data = load_pickle("./data/voxels_intersection.pickle")  # Load data only once
+torso_only = False  # Only show voxels between 85 and 150 cm
+mode = "online"  # "online", "offline" or "basic"
+
+if mode == "online":  # Shows clusters based on colour models of the four persons
+    fp = "./data/voxels_clusters_online.pickle"
+elif mode == "offline":  # Shows clusters based on cluster centers from previous frames
+    fp = "./data/voxels_clusters.pickle"
+elif mode == "basic":  # Shows the voxel model with either random or true colours, depedening on the mode in voxel_postprocessing.py
+    fp = "./data/voxels_intersection.pickle"
+else:
+    raise ValueError("Invalid mode")
+
+data = load_pickle(fp)  # Load data only once
 voxels = data["voxels"]
 colours = data["colours"]
 bounds = data["bounds"]
-torso_only = True
 
 
 def generate_grid(width, depth):

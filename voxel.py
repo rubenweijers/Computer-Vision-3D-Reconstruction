@@ -147,14 +147,7 @@ if __name__ == "__main__":
         for camera_masks, camera_table, camera_frames in zip(all_masks, all_tables, all_frames):
             voxels_camera, image_points_camera = select_voxels(camera_masks[frame_n], camera_table)
 
-            # Rewrite to numpy array
-            pixel_values = np.zeros((len(image_points_camera), 3))
-            cf = camera_frames[frame_n]
-            points = np.array(image_points_camera)
-            points = points[:, 1], points[:, 0]
-            pixel_values = cf[points]
-
-            # pixel_values = [camera_frames[frame_n][point[1], point[0]] for point in image_points_camera]
+            pixel_values = [camera_frames[frame_n][point[1], point[0]] for point in image_points_camera]
 
             voxels_frame.append(voxels_camera)
             pixel_values_frame.append(pixel_values)
