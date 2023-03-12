@@ -12,12 +12,14 @@ colour_map.update({tuple(v): k for k, v in colour_map.items()})  # Add reverse m
 def get_colour_subset(frame_voxels, frame_colours, frame_labels, cluster: int, hip_height: int = 850, shoulder_height: int = 1500):
     """Get all colours from a specific cluster, and filter based on z axis (height)"""
     idx = np.where((frame_labels == cluster))  # All idx from the same cluster
-    colour_subset = frame_colours[idx]  # Filter based on both conditions
-    voxels_subset = frame_voxels[idx]  # Filter based on both conditions
+    colour_subset = frame_colours[idx]  # Filter based on cluster
 
     # All where z axis is between 70-150 centimeters, order is x, z, y
-    idx_z = np.where((voxels_subset[:, 1] >= hip_height) & (voxels_subset[:, 1] <= shoulder_height))
-    colour_subset = colour_subset[idx_z]
+    if hip_height is not None and shoulder_height is not None:  # Only filter if both are not None
+        voxels_subset = frame_voxels[idx]  # Filter based on cluster
+
+        idx_z = np.where((voxels_subset[:, 1] >= hip_height) & (voxels_subset[:, 1] <= shoulder_height))
+        colour_subset = colour_subset[idx_z]
     return colour_subset
 
 
