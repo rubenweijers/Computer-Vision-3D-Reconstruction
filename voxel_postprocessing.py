@@ -57,10 +57,12 @@ if __name__ == "__main__":
     bounds = data_pickle["bounds"]
     stepsize = bounds["stepsize"]
 
+    colourise = True  # Either use true colours or use random colours for the voxels
+
     voxels_postprocessed = []
     colours_postprocessed = []
     for voxels_frame, pixel_values_frame in tzip(all_voxels, all_pixel_values, desc="Postprocessing frames"):
-        voxels, colours = intersect_voxels(voxels_frame, pixel_values_frame, stepsize, colourise=True)  # False is faster for debugging
+        voxels, colours = intersect_voxels(voxels_frame, pixel_values_frame, stepsize, colourise=colourise)  # False is faster for debugging
 
         voxels_postprocessed.append(voxels)
         colours_postprocessed.append(colours)
