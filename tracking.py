@@ -5,10 +5,16 @@ from colour_model_offline import colour_map, get_colour_subset
 from data_processing import load_pickle
 
 
-def plot_cluster_centers(n_clusters=4, colours=None, all_cluster_centers=None, bounds=None):
+def plot_cluster_centers(n_clusters=4, colours=None, all_cluster_centers=None, bounds=None, window_size: int = 3):
     for cluster in range(n_clusters):
         cluster_centers = all_cluster_centers[:, cluster, :]
-        plt.plot(cluster_centers[:, 0], cluster_centers[:, 1], color=colours[cluster], label=f"Cluster {cluster}", marker="o")
+        xs = cluster_centers[:, 0]
+        ys = cluster_centers[:, 1]
+
+        xs = np.convolve(xs, np.ones(window_size) / window_size, mode="same")  # Calculate floating average of cluster centers
+        ys = np.convolve(ys, np.ones(window_size) / window_size, mode="same")  # Window size is hyperparameter
+
+        plt.plot(xs, ys, color=colours[cluster], label=f"Cluster {cluster}", marker="o")
 
     # Indicate start point of each cluster
     for cluster in range(n_clusters):
@@ -27,7 +33,8 @@ def plot_cluster_centers(n_clusters=4, colours=None, all_cluster_centers=None, b
 if __name__ == "__main__":
     colours = {0: (0, 1, 1), 1: (1, 0, 1), 2: (1, 1, 0), 3: (0, 0, 0)}
     n_clusters = 4
-    mode = "online"  # Either "online" or "offline"
+    window_size = 3
+    mode = "offline"  # Either "online" or "offline"
 
     if mode == "online":
         data = load_pickle("./data/voxels_clusters_online.pickle")
@@ -60,4 +67,4 @@ if __name__ == "__main__":
     # N x 4 x 2, where N is the number of frames, 4 clusters, and 2 is X and Y coords
     # print(all_cluster_centers.shape)
 
-    plot_cluster_centers(n_clusters, colours, all_cluster_centers, bounds)
+    plot_cluster_centers(n_clusters, colours, all_cluster_centers, bounds, window_size=window_size)
