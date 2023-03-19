@@ -49,7 +49,10 @@ def intersect_voxels(frame_voxels, pixel_values, stepsize: int, colourise: bool 
 
 if __name__ == "__main__":
     # Load the voxel data from pickle
-    data_pickle = load_pickle("./data/voxels.pickle")
+    # data_pickle = load_pickle("./data/voxels.pickle")
+    # Load the voxel data from json
+    from data_processing import load_json
+    data_pickle = load_json("./data/voxels.json")
 
     all_voxels = data_pickle["voxels"]
     all_pixel_values = data_pickle["pixel_values"]
@@ -64,9 +67,17 @@ if __name__ == "__main__":
     for voxels_frame, pixel_values_frame in tzip(all_voxels, all_pixel_values, desc="Postprocessing frames"):
         voxels, colours = intersect_voxels(voxels_frame, pixel_values_frame, stepsize, colourise=colourise)  # False is faster for debugging
 
+        voxels = np.array(voxels).tolist()
+        colours = np.array(colours).tolist()
+
         voxels_postprocessed.append(voxels)
         colours_postprocessed.append(colours)
 
     # Save the intersection to a pickle
-    with open("./data/voxels_intersection.pickle", "wb") as f:
-        pickle.dump({"voxels": voxels_postprocessed, "colours": colours_postprocessed, "bounds": bounds}, f)
+    data = {"voxels": voxels_postprocessed, "colours": colours_postprocessed, "bounds": bounds}
+    # with open("./data/voxels_intersection.pickle", "wb") as f:
+    #     pickle.dump(data, f)
+
+    # Save the intersection to a json
+    from data_processing import save_json
+    save_json("./data/voxels_intersection.json", data)

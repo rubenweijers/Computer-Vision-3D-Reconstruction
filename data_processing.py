@@ -18,6 +18,20 @@ def save_pickle(fp, data):
         pickle.dump(data, f)
 
 
+def save_json(fp, data):
+    """Save a json file"""
+    dump = json.dumps(data, indent=4, cls=NumpyEncoder)
+    with open(fp, "w") as f:
+        f.write(dump)
+
+
+def load_json(fp):
+    """Load a json file"""
+    with open(fp, "r") as f:
+        data = json.load(f)
+    return data
+
+
 class NumpyEncoder(json.JSONEncoder):
     """Special json encoder for numpy types
 

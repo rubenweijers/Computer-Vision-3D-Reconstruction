@@ -149,6 +149,9 @@ if __name__ == "__main__":
 
             pixel_values = [camera_frames[frame_n][point[1], point[0]] for point in image_points_camera]
 
+            voxels_camera = np.array(voxels_camera).tolist()
+            pixel_values = np.array(pixel_values).tolist()
+
             voxels_frame.append(voxels_camera)
             pixel_values_frame.append(pixel_values)
 
@@ -156,8 +159,13 @@ if __name__ == "__main__":
         all_pixel_values.append(pixel_values_frame)
 
     # Write voxels to pickle
-    with open("./data/voxels.pickle", "wb") as fp:
-        pickle.dump({"voxels": all_voxels, "pixel_values": all_pixel_values, "bounds": bounds}, fp)
+    data = {"voxels": all_voxels, "pixel_values": all_pixel_values, "bounds": bounds}
+    # with open("./data/voxels.pickle", "wb") as fp:
+    #     pickle.dump(data, fp, -1)
+
+    # Save as json
+    from data_processing import save_json
+    save_json("./data/voxels.json", data)
 
     # Plot all voxels for each camera, add colour to each camera
     # plot_voxels(lookup_tables, output_colours, frame_number=0)

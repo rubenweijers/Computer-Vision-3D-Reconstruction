@@ -12,13 +12,16 @@ from colour_model_offline import (colour_map, convert_colour_space_of_list,
 from data_processing import load_pickle, save_pickle
 
 if __name__ == "__main__":
-    data = load_pickle("./data/voxels_intersection.pickle")
+    # data = load_pickle("./data/voxels_intersection.pickle")
+    from data_processing import load_json
+    data = load_json("./data/voxels_intersection.json")
     all_voxels = data["voxels"]
     all_colours = data["colours"]
     bounds = data["bounds"]
 
-    data_colour_model = load_pickle("./data/colour_models.pickle")
-    colour_models = data_colour_model["colour_models"]
+    # data_colour_model = load_pickle("./data/colour_models.pickle")
+    data_colour_model = load_json("./data/colour_models.json")
+    colour_models = np.array(data_colour_model["colour_models"])
 
     all_labels = []
     all_cluster_centers = []
@@ -81,4 +84,6 @@ if __name__ == "__main__":
 
     # Save to pickle
     data = {"voxels": data["voxels"], "bounds": data["bounds"], "colours": all_labels, "cluster_centers": all_cluster_centers}
-    save_pickle("./data/voxels_clusters_online.pickle", data)
+    # save_pickle("./data/voxels_clusters_online.pickle", data)
+    from data_processing import save_json
+    save_json("./data/voxels_clusters_online.json", data)

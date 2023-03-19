@@ -2,7 +2,7 @@ import cv2
 import glm
 import numpy as np
 
-from data_processing import load_pickle
+from data_processing import load_json, load_pickle
 
 block_size = 1.0
 frame_n = 0
@@ -11,14 +11,18 @@ mode = "online"  # "online", "offline" or "basic"
 
 if mode == "online":  # Shows clusters based on colour models of the four persons
     fp = "./data/voxels_clusters_online.pickle"
+    fp = "./data/voxels_clusters_online.json"
 elif mode == "offline":  # Shows clusters based on cluster centers from previous frames
     fp = "./data/voxels_clusters.pickle"
+    fp = "./data/voxels_clusters.json"
 elif mode == "basic":  # Shows the voxel model with either random or true colours, depedening on the mode in voxel_postprocessing.py
     fp = "./data/voxels_intersection.pickle"
+    fp = "./data/voxels_intersection.json"
 else:
     raise ValueError("Invalid mode")
 
-data = load_pickle(fp)  # Load data only once
+# data = load_pickle(fp)  # Load data only once
+data = load_json(fp)  # Load data only once
 voxels = data["voxels"]
 colours = data["colours"]
 bounds = data["bounds"]

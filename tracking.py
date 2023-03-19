@@ -36,8 +36,10 @@ if __name__ == "__main__":
     window_size = 3
     mode = "offline"  # Either "online" or "offline"
 
+    from data_processing import load_json
     if mode == "online":
-        data = load_pickle("./data/voxels_clusters_online.pickle")
+        # data = load_pickle("./data/voxels_clusters_online.pickle")
+        data = load_json("./data/voxels_clusters_online.json")
         bounds = data["bounds"]
         all_voxels = data["voxels"]
         all_colours = data["colours"]
@@ -60,7 +62,8 @@ if __name__ == "__main__":
         all_cluster_centers = np.array(all_cluster_centers)
 
     elif mode == "offline":
-        data = load_pickle("./data/voxels_clusters.pickle")
+        # data = load_pickle("./data/voxels_clusters.pickle")
+        data = load_json("./data/voxels_clusters.json")
         bounds = data["bounds"]
         all_cluster_centers = np.array(data["cluster_centers"])
 

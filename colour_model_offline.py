@@ -46,8 +46,11 @@ def get_mean_kmeans(colour_subset, n_kmeans_clusters: int) -> np.ndarray:
 
 
 if __name__ == "__main__":
-    data_voxels = load_pickle("./data/voxels_intersection.pickle")
-    data_clusters = load_pickle("./data/voxels_clusters.pickle")
+    # data_voxels = load_pickle("./data/voxels_intersection.pickle")
+    # data_clusters = load_pickle("./data/voxels_clusters.pickle")
+    from data_processing import load_json
+    data_voxels = load_json("./data/voxels_intersection.json")
+    data_clusters = load_json("./data/voxels_clusters.json")
     n_clusters = 2  # Number of colours per person for the colour model
     use_lab_colour_space = True  # Convert to LAB colour space
     use_gmm = True  # Use GMM, otherwise KMeans
@@ -99,7 +102,9 @@ if __name__ == "__main__":
     # Save colour models to pickle
     data = {"colour_models": colour_models, "n_clusters": n_clusters,
             "use_lab_colour_space": use_lab_colour_space, "use_gmm": use_gmm}
-    save_pickle("./data/colour_models.pickle", data)
+    # save_pickle("./data/colour_models.pickle", data)
+    from data_processing import save_json
+    save_json("./data/colour_models.json", data)
 
     # Create image
     height = 300

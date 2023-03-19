@@ -24,7 +24,9 @@ if __name__ == "__main__":
     # Colour dict based on CYMK converted to RGB
     colours = {0: (0, 1, 1), 1: (1, 0, 1), 2: (1, 1, 0), 3: (0, 0, 0)}
 
-    data = load_pickle("./data/voxels_intersection.pickle")
+    # data = load_pickle("./data/voxels_intersection.pickle")
+    from data_processing import load_json
+    data = load_json("./data/voxels_intersection.json")
     all_voxels = data["voxels"]
     bounds = data["bounds"]
 
@@ -50,9 +52,11 @@ if __name__ == "__main__":
         all_labels.append(labels)
 
         # Plot the clusters
-        # plot_clusters(frame_voxels, bounds, labels)
+        plot_clusters(frame_voxels, bounds, labels)
 
     # Save to pickle
     data = {"voxels": data["voxels"], "bounds": data["bounds"], "colours": all_labels, "cluster_centers": all_cluster_centers}
-    with open("./data/voxels_clusters.pickle", "wb") as fp:
-        pickle.dump(data, fp)
+    # with open("./data/voxels_clusters.pickle", "wb") as fp:
+    #     pickle.dump(data, fp)
+    from data_processing import save_json
+    save_json("./data/voxels_clusters.json", data)
