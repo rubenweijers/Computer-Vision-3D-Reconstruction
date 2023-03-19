@@ -112,7 +112,7 @@ if __name__ == "__main__":
               "z_lowerbound": -2200, "z_upperbound": 0,
               "stepsize": 30, "voxel_size": 115}  # mm
 
-    n_frames = None  # Number of frames in total to load
+    n_frames = 50  # Number of frames in total to load
     every_nth = 50  # Only load every nth frame
 
     all_masks = []
@@ -140,7 +140,7 @@ if __name__ == "__main__":
 
     all_voxels = []  # List of voxels for each frame
     all_pixel_values = []
-    for frame_n in trange(len(frames_background), desc="Processing frames", unit="frame"):
+    for frame_n in trange(n_frames, desc="Processing frames", unit="frame"):
         voxels_frame = []
         pixel_values_frame = []
 
